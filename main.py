@@ -1,10 +1,104 @@
 import numpy as np
 import scipy as sp
+from scipy import signal
 import matplotlib.pyplot as plt
+import pywt as wt
+rng = np.random.default_rng()
 
-plt.style.use(['Science', 'notebook'])
 plt.rcParams['figure.figsize'] = [16,22]
 plt.rcParams.update({'font.size' : 18})
+
+plt.tight_layout()
+def windowed_ft(t, x, Fs, w_pos_sec, w_len):
+    
+    N = len(x)
+    w_pos = int(Fs * w_pos_sec)
+    w_padded = np.zeros(N)
+    w_padded[w_pos:w_pos + w_len] = 1
+    x = x * w_padded    
+    plt.figure(figsize=(8, 2))
+
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(t, x, c='k')
+    plt.plot(t, w_padded, c='r')
+    plt.xlim([min(t), max(t)])
+    plt.ylim([-1.1, 1.1])
+    plt.xlabel('Time (seconds)')
+
+    plt.subplot(1, 2, 2)
+    X = np.abs(np.fft.fft(x)) / Fs
+    freq = np.fft.fftfreq(N, d=1/Fs)
+    X = X[:N//2]
+    freq = freq[:N//2]
+    plt.plot(freq, X, c='k')
+    plt.xlim([0, 7])
+    plt.ylim([0, 3])
+    plt.xlabel('Frequency (Hz)')
+    plt.tight_layout()
+    plt.show()
+    
+
+Fs = 128
+duration = 10
+omega1 = 1
+omega2 = 5
+N = int(duration * Fs)
+t = np.arange(N) / Fs
+t1 = t[:N//2]
+t2 = t[N//2:]
+
+x1 = 1.0 * np.sin(2 * np.pi * omega1 * t1)
+x2 = 1 * np.sin(2 * np.pi * omega2 * t2)
+x = np.concatenate((x1, x2))
+
+d, e = wt.cwt(x1)
+print(d)
+print(e)
+w_len = 4 * Fs
+windowed_ft(t, x, Fs, w_pos_sec=1, w_len=w_len)
+windowed_ft(t, x, Fs, w_pos_sec=3, w_len=w_len)
+windowed_ft(t, x, Fs, w_pos_sec=5, w_len=w_len)
+
+plt.figure(figsize=(10, 2))
+plt.subplot(1, 2, 1)
+plt.plot(t, x, c='k')
+plt.xlim([min(t), max(t)])
+plt.xlabel('Time (seconds)')
+
+plt.subplot(1, 2, 2)
+X = np.abs(np.fft.fft(x)) / Fs
+freq = np.fft.fftfreq(N, d=1/Fs)
+X = X[:N//2]
+freq = freq[:N//2]
+plt.plot(freq, X, c='k')
+plt.xlim([0, 7])
+plt.ylim([0, 3])
+plt.xlabel('Frequency (Hz)')
+plt.tight_layout()
+plt.show()
+# Number of samplepoints
+N = 1000
+# sampling frequency (# of samples per second)
+Fs = 256
+# sample period; time spent per sample
+T = 1.0 / Fs  # N*T (#samples x sample period) is the tmax, i.e., signal recording time 
+
+x = np.linspace(0.0, N*T, N)
+#generate fictitious samples with frequency 50 and 80
+y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(120.0 * 2.0*np.pi*x)
+#short time fourier transform
+fft = signal.stft(y, Fs, window='hann', padded=True)
+#fft[0] : array of sample frequencies.
+#fft[1]: array of segment times.
+#fft[2] : STFT of the input array
+#plotting time freq analysis
+plt.pcolormesh(fft[1], fft[0], np.abs(fft[2]), shading='gouraud')
+plt.title('STFT Magnitude')
+plt.ylabel('Frequency [Hz]')
+plt.xlabel('Time [sec]')
+plt.colorbar()
+plt.show()
 
 #create a simple signal with two frequencies
 dt = 0.001  #deltatime
@@ -35,6 +129,8 @@ fhat = indices * fhat #Zero out small fourier, same as psdclean
 #Do inverse fft on the filtered frequencies
 ffilt = np.fft.ifft(fhat)
 
+
+
 fig,axis = plt.subplots(3,1)
 plt.sca(axis[0])
 plt.plot(t, f, color='c', linewidth=1.5, label='Noisy')
@@ -53,5 +149,7 @@ plt.sca(axis[2])
 plt.plot(t, ffilt, color='k', linewidth=2, label='Inverse FFT')
 plt.xlim(t[0], t[-1])
 plt.legend()
+
+
 
 plt.show()
