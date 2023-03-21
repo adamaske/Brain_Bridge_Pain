@@ -3,6 +3,32 @@ import scipy as sp
 from scipy import signal
 import matplotlib.pyplot as plt
 import pywt as wt
+import pylsl as lsl
+from pylsl import resolve_stream
+from pylsl import StreamInlet
+
+print("Waiting for FFT stream")
+#The lsl is sent with type EEG, this can be changed in the openBCI gui
+streams = resolve_stream('type', 'EEG')
+#we're only sending eeg data at this time so we grab that
+#we can send everything over this same stream, then just grab other elements from the stream
+inlet  = StreamInlet(streams[0])
+
+channel_data = {} #array with 16 arrays which store each datapoint over the time
+
+#when using daisy we're getting 16 channels of 125 datapoints each frame
+for i in range(16):
+    #grabs the data and timestep
+    sample, timestep = inlet.pull_sample()
+    if i not in channel_data: #is there an element to put this in
+        channel_data[i] = sample #the i'th channel of channel data's 0th element is sample
+    else: #no, then make one
+        channel_data[i].append(sample) #the i'th channel gets an additional element, sample
+
+for channel in channel_data:
+    plt.plot(channel_data[channel][:60])
+plt.show() 
+        
 rng = np.random.default_rng()
 
 plt.rcParams['figure.figsize'] = [16,22]
@@ -51,10 +77,6 @@ t2 = t[N//2:]
 x1 = 1.0 * np.sin(2 * np.pi * omega1 * t1)
 x2 = 1 * np.sin(2 * np.pi * omega2 * t2)
 x = np.concatenate((x1, x2))
-
-d, e = wt.cwt(x1)
-print(d)
-print(e)
 w_len = 4 * Fs
 windowed_ft(t, x, Fs, w_pos_sec=1, w_len=w_len)
 windowed_ft(t, x, Fs, w_pos_sec=3, w_len=w_len)
