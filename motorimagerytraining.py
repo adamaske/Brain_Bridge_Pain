@@ -8,7 +8,7 @@ from keras.layers   import Dense, Dropout, Activation, Flatten, Conv2D, Conv1D, 
 user = 'Adam'
 labels = ['right', 'left']
 
-def Filter_Channels():#this functions removes the channels which are not used for Motor Imagery
+def Filter_Channels(data):#this functions removes the channels which are not used for Motor Imagery
     channels = 16
     motor_cortex_channels = np.array([3, 4, 5, 11,12,13])
     new_data = []
@@ -23,34 +23,52 @@ def User_label_index_filename(user, label, index, suffix):
     filename = filename.lower()
     return filename
 def Load_Training_Data():
-    x = np.array([]) #this array holds arrays
+    #
+    x = np.empty((0, 625, 16)) # initialize as empty array with shape (0, 16)
     y = np.array([]) #this array holds the label to each array
-    directory = 'C:/Datasets' #folder where datasets are saved
+    directory = 'C:\\Datasets' #folder where datasets are saved
     folder = os.path.join(directory, user.lower())#path to this user's dir
     if not os.path.exists(folder): #does the folder exist ?
         print('No folder for this user exists!')#the folder doesnt exits, return
-        return 0
+        return x,y
+    files_per_label = np.empty(0, dtype=int)#array to store how many files there is per label
     for label in labels: #we want to find all files for each label we're training for
         #we must find how many files there are of this type, each is indexed
         index = 0 #start at 0th index
-        file = os.path.join(folder, User_label_index_filename(user, label, index, '.npy'))#start at user_label_0
-        while os.path.isfile(file):#is there a file here
-            x_train, y_train = (np.load(file), label)#this file exists, so add the array saved to data!
-            np.append(x, x_train)
-            np.append(y, y_train)
-            
-            index = index + 1#next file, iterate index
+        while True:#is there a file here
             file = os.path.join(folder, User_label_index_filename(user, label, index, '.npy'))#set new filepath with new index
-        data = np.load(file)#the file location, then data. it doesnt matter if the filename contains .npy at the end
-    print(x)
-    print(y)
+            if os.path.isfile(file):
+                 index = index + 1#next file, iterate index
+            else:
+                break #the file doesnt exits, so no more files to find of this label
+        files_per_label = np.append( files_per_label, index)
+        
+    total_files = 0
+    for file in range(len(files_per_label)):
+        print('File Amount : ', files_per_label[file])  
+        for index in range(files_per_label[file]):
+            total_files = total_files + 1
+    print('Total file amount -', total_files)
+    
+    #we now know how many files we need
+    x = np.empty((total_files, 625, 16)) #we have 4 arrays with 625 datapoints for 16 channelss
+    
+    for file in range(len(files_per_label)):
+        #print('File Amount : ', files_per_label[file])  
+        for index in range(files_per_label[file]):
+            print('Reading index ', index, ' from file ', file)
+            #print('User - ', user, ' label -', labels[file], 'index - ', index)
+
+            data = np.load(os.path.join(folder, User_label_index_filename(user, labels[file], index, '.npy')))
+       
+         
+    return x,y
     
 if __name__ == '__main__':
-    data = Load_Training_Data()
-    
-    if data == 0:
-        print('Exiting!')
-        exit()
+    x_train, y_train= Load_Training_Data() #train is the FFT data, y train is the label. If the 0th xtrain is a right command, then the 0th y_train is 'right'
+    print('Elements in x_train - ', len(x_train))
+    print('Labels - ', y_train)
+    exit()
     
 #motor_cortex_electrode_indices = np.array([0, 3,4,5,2])
 #
