@@ -8,29 +8,40 @@ from keras.layers   import Dense, Dropout, Activation, Flatten, Conv2D, Conv1D, 
 user = 'Adam'
 labels = ['right', 'left']
 
-def Filter_Channels(data):#this functions removes the channels which are not used for Motor Imagery
-    channels = 16
-    motor_cortex_channels = np.array([3, 4, 5, 11,12,13])
-    new_data = []
-    for i in range(len(data)):
-        for channel in range(len(motor_cortex_channels)):
-            print(i, channel, data[i][channel])
-
-    print(new_data)
-
+def Filter_Channels(all_fft):#this functions removes the channels which are not used for Motor Imagery
+    print('Filtering Channels')
+    print('Amount of FFTs - ', len(all_fft))
+    all_channels = len(all_fft[0][0])
+    print('Each FFT has', all_channels, ' channels' )
+    motor_cortex_channels = np.array([3, 4, 5, 11,12,13])#channels used for Mi
+    print('The MotorCortex channels -', motor_cortex_channels)
+    
+    new_ffts = np.array((0, len(motor_cortex_channels)))#we're gonna have all new ffts, without the other channels
+    for fft in range(len(all_fft)): #go trough every fft 
+        
+        new_fft = np.array(0) #a new fft
+        for fft_channel in range(len(motor_cortex_channels)):
+            new_fft = np.append(new_fft, all_fft[fft][motor_cortex_channels[fft_channel]])
+        new_ffts = np.append(new_ffts, new_fft)   
+        
+    print('Elements in new_ffts - ', len(new_ffts))
+    #print('Elements in new_ffts[0] - ', len(new_ffts[0]))
+    #print('Elements in new_ffts[0][0] - ', len(new_ffts[0][0]))
+    #print('Value    at new_ffts[0][0][0] - ', new_ffts[0][0][0])
+    return new_ffts #return the new FFTs with removed channels
+    
 def User_label_index_filename(user, label, index, suffix):
     filename =  user+'_'+label+'_'+str(index)+suffix
     filename = filename.lower()
     return filename
 def Load_Training_Data():
-    #
-    x = np.empty((0, 625, 16)) # initialize as empty array with shape (0, 16)
-    y = np.array([]) #this array holds the label to each array
+    
     directory = 'C:\\Datasets' #folder where datasets are saved
     folder = os.path.join(directory, user.lower())#path to this user's dir
     if not os.path.exists(folder): #does the folder exist ?
         print('No folder for this user exists!')#the folder doesnt exits, return
-        return x,y
+        return 0,0
+    
     files_per_label = np.empty(0, dtype=int)#array to store how many files there is per label
     for label in labels: #we want to find all files for each label we're training for
         #we must find how many files there are of this type, each is indexed
@@ -51,7 +62,8 @@ def Load_Training_Data():
     print('Total file amount -', total_files)
     
     #we now know how many files we need
-    x = np.empty((total_files, 625, 16)) #we have 4 arrays with 625 datapoints for 16 channelss
+    x = np.empty((total_files, 625, 16)) #we have 4 arrays with 625 datapoints for 16 channels
+    y = np.array([]) #this array holds the label to each array
     
     for file in range(len(files_per_label)):
         #print('File Amount : ', files_per_label[file])  
@@ -60,14 +72,24 @@ def Load_Training_Data():
             #print('User - ', user, ' label -', labels[file], 'index - ', index)
 
             data = np.load(os.path.join(folder, User_label_index_filename(user, labels[file], index, '.npy')))
-       
-         
+            print('Info about file : ')
+            print('Elements in data - ', len(data))
+            print('Elements in data[0]', len(data[0]))
+
     return x,y
     
 if __name__ == '__main__':
     x_train, y_train= Load_Training_Data() #train is the FFT data, y train is the label. If the 0th xtrain is a right command, then the 0th y_train is 'right'
     print('Elements in x_train - ', len(x_train))
-    print('Labels - ', y_train)
+    print('Elements in x_train[0] - ', len(x_train[0]))
+    print('Elements in x_train[0][0] - ', len(x_train[0][0]))
+    print('Value    at x_train[0][0][0] - ', x_train[0][0][0])
+    t7 = np.zeros(len(x_train[0]))
+    for fft in range(len(x_train[0])):
+        t7[fft] = x_train[0][fft][2]
+    print(t7)
+    #print('Labels - ', y_train)
+    #Filter_Channels(x_train)
     exit()
     
 #motor_cortex_electrode_indices = np.array([0, 3,4,5,2])

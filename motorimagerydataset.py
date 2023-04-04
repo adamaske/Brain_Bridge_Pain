@@ -58,6 +58,18 @@ def Record(inlet): #
         time.sleep(1 / sample_rate)#the script runs insanly much faster than the sample_rate, so we wait
     return data
 
+def Transform_Data(data):
+    #this single recording now has 625 points with 16 channels in per
+    data_points_amount = len(data)
+    channels = len(data[0])
+    
+    new_data = np.array((channels, data_points_amount))
+    for channel in range(channels):
+        for val in range(data_points_amount):
+            new_data[channel][val] = data[val][channel]
+    return new_data 
+        
+    
 #def Record(): #for testing 
 #    print('Recording Started without Inlet!')
 #    data = np.array([])
@@ -107,6 +119,7 @@ if __name__ == '__main__':
             data = Record(inlet) #this start recording 
     else:
         print('Not Recording!') 
+    new_data = Transform_Data(data)
     saved = Save(user, label, data)
     if saved:
         print('Training Saved!')  
