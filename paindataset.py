@@ -20,6 +20,8 @@ class CustomRecordingThread(Thread):
 def Connect(): #this function connects us to the lsl stream
     print('Connecting to LSL stream!')
     fft_inlet = StreamInlet(resolve_stream('type', 'FFT')[0])
+    sample = fft_inlet.pull_sample()
+
     print('FFT Stream Connected')
     raw_inlet = StreamInlet(resolve_stream('type', 'RAW')[0])
     print('RAW Stream Connected')
@@ -37,27 +39,29 @@ def Record_FFT(inlet):
     print(f"FFT Sample Rate : {sample_rate:.1f}")
     print(f"FFT Sample Amount : {num_samples:.1f}") 
     
-    channel_data = {}
-    start_time = time.time()
-
+    channel_data = np.zeros((16, num_samples))
+    start_time = time.time() #
+    count = 0
     while time.time() - start_time < recording_time: #recording for recording_time
-        for i in range(channels):
-            sample, timestamp = inlet.pull_sample()
-        if i not in channel_data:
-            channel_data[i] = sample
-        else:
-            channel_data[i].append(sample)
+        chunk, timestamps = inlet.pull_chunk()
+        if timestamps:
+            print(count)
+            count +=1
         current_time = time.time() - start_time
-        print(f"FFT Elapsed : {current_time}", end='\r')
+        print(f"FFT Elapsed : {current_time:.1f}", end='\r')
+        
     print(f"FFT Length of data : {len(channel_data):.1f}")
-    data_points_amount = len(channel_data)
+    print(f"FFT Length of 0 data : {len(channel_data[0]):.1f}")
     
-    data = np.zeros((channels, data_points_amount))
-    for element in range(data_points_amount):
-        for channel in range(channels):
-            data[channel][element] = channel_data[element][channel]
-    print(f"FFT TimeSeries Data is a {len(data)}x{len(data[0])} array")
-    return data
+    #data_points_amount = len(channel_data[0])#sample rate * recording time (ish)
+    #
+    #data = np.zeros((channels,data_points_amount))
+    #for channel in range(data.shape(0)):
+    #    data_points = np.array(channels[channel])
+    #    print(f"Data point legnth {len(data_points)}")
+    #    data[channel] = data_points
+    #print(f"FFT TimeSeries Data is a {data.shape(0)}x{data.shape(1)} array")
+    return channel_data
 
 def Record_Raw(inlet):
     print('RAW Recording Running')
@@ -119,18 +123,20 @@ if __name__ == '__main__':
     fft_data = fft_thread.value#obtain values from functions they ran
     raw_data = raw_thread.value
     
-    fft_channels = len(fft_data)
-    fft_data_points_amount = len(fft_data[0])
-    print(f"FFT Data is a {fft_channels}x{fft_data_points_amount} array")
+    
+    print(f"FFT Data is a {len(fft_data)}x{len(fft_data[0])} array")
+    #fft_channels = len(fft_data)
+    #fft_data_points_amount = len(fft_data[0])
+    #print(f"FFT Data is a {fft_channels}x{fft_data_points_amount} array")
     
     raw_channels = len(raw_data)
     raw_data_points_amount = len(raw_data[0])
-    print(f"FFT Data is a {raw_channels}x{raw_data_points_amount} array")
+    print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
     
-    timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
-    intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
-    
-    keep = Keep_Or_Discard_Recording()
+    #timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
+    #intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
+    #
+    #keep = Keep_Or_Discard_Recording()
 
     #save
     #time = np.linspace(0, 5, len(raw_data))

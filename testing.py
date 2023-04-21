@@ -24,18 +24,18 @@ channels = 16
 while time.time() - start_time < recording_time:
     for i in range(channels):
         sample, timestamp = inlet.pull_sample()
-        if timestamp:
-            if i not in channel_data:
-                channel_data[i] = sample
-            else:
-                channel_data[i].append(sample)
+        if i not in channel_data:
+            channel_data[i] = sample
+        else:
+            channel_data[i].append(sample)
     current_time = time.time() - start_time
     print(f"Elapsed {current_time:.1f}", end='\r')
 
 
 print(f"Channel data length {len(channel_data)}")
-print(f"Channel data 0 length {len(channel_data[i])}")
-
+print(f"Channel data 0 length {len(channel_data[0])}")
+x = channel_data[0][0]
+print(x)
 for chan in channel_data:
     plt.plot(channel_data[chan][:60])
 plt.show()
