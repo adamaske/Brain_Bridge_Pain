@@ -45,9 +45,7 @@ def Record_FFT(inlet):
     while time.time() - start_time < recording_time: #recording for recording_time
         for channel in range(channels):
             sample, timestamp = inlet.pull_sample()
-            array = np.array(sample)
-            print(array.shape)
-            channel_data[channel].append(sample[:60])
+            channel_data[channel].append(sample)
                 
         current_time = time.time() - start_time
         print(f"FFT Elapsed : {current_time:.1f}", end='\r')
@@ -114,7 +112,10 @@ if __name__ == '__main__':
     fft_data = fft_thread.value#obtain values from functions they ran
     #raw_data = raw_thread.value
     
-    
+    for channel in range(16):
+        plt.plot(fft_data[channel][30][:60])
+    plt.ylim(0, 100)
+    plt.show()
     print(f"FFT Data is a {fft_data.shape} array")
     #fft_channels = len(fft_data)
     #fft_data_points_amount = len(fft_data[0])
