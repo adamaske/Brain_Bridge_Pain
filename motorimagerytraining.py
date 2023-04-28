@@ -86,7 +86,7 @@ if __name__ == '__main__':
     print('Value    at x_train[0][0][0] - ', x_train[0][0][0])
     t7 = np.zeros(len(x_train[0]))
     for fft in range(len(x_train[0])):
-        t7[fft] = x_train[0][fft][2]
+        t7[fft] = x_train[0][fft][0]
     print(t7)
     #print('Labels - ', y_train)
     #Filter_Channels(x_train)
