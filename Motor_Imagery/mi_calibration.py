@@ -6,30 +6,39 @@ from pylsl import StreamInfo, StreamOutlet
 
 #VISUALS
 fontsize = 30 #fontsize
-matplotlib.rcParams.update({'font.size': fontsize})
+matplotlib.rcParams.update({'font.size': fontsize})#set font size
+
 fig, ax = plt.subplots() #figure and axes
 fig.set_facecolor('black')#black background color
 ax.set_xlim(-1, 1)#axis goes from -1 to 1
 ax.set_ylim(-1, 1)
-ax.axvline(0, color='red')#red lines
-ax.axhline(0, color='red')
+ax.axvline(0, color='red')#Vertical red line
+ax.axhline(0, color='red')#Horizontal red line
 
 box_x_size = 0.4#box size
 box_y_size = 0.4
 box = plt.Rectangle((-box_x_size / 2, -box_y_size / 2), box_x_size, box_y_size, facecolor='blue', edgecolor='white')#Box moved
 ax.add_patch(box)#add box to axe
 
-trial_text = ax.text(0, 1, 'Direction', ha='center', va='bottom', color='white')#text object, shows what direction
-
-
-#trial_type_text = ax.text(0, 1, 'Direction', ha='center', va='bottom', color='white')
-
-plt.ion()
+trial_text = ax.text(0, 1, 'Trail', ha='center', va='bottom', color='white')#text object, shows what direction
+class_text = ax.text(0,-1, 'DIRECTION', ha='center', va='bottom', color='red')
+plt.ion() #enables interactive mode
 plt.draw()
 plt.show()
 #END VISUALS
 
 #Welcome to Motor Imagery Calibartion Marker Injection
+print('Welcome to Motor Imagery Calibartion!')
+
+info = StreamInfo(name='MotorImagery-Markers', #Stream name
+                  type='Markers', #type
+                  channel_count=1, #how many channels. This only need to send one marker at a time
+                  nominal_srate=0, #this is an outlet, so the Input HZ is set to 0
+                  channel_format='string', #What data type is being sent. This sends "left", "right", "calib-begin" etc.
+                  source_id='123dsasd') #Uniqie identifier for this stream, 
+
+outlet = StreamOutlet(info) #LSL outlet stream, with info as its settings
+
 warmup_trials = 2 #Amount of warmup trails. A warmup trial does not count in calibartion
 trails_per_class = 60 #Amount of trials per class (left / right) 
 perform_time = 3.5 #How long does one trial last, in seconds
@@ -41,26 +50,14 @@ labels = ['L', 'R'] #The labels is the name of the "class" being calibarted, for
 markers = ['left', 'right'] #The marker being sent, this must correspond with targets in NeuroPype Pipline(found in "assign targets" module)
 box_directions = [-1, 1]#What x direction does the box move per label
 
-info = StreamInfo(name='MotorImagery-Markers', #Stream name
-                  type='Markers', #type
-                  channel_count=1, #how many channels. This only need to send one marker at a time
-                  nominal_srate=0, #this is an outlet, so the Input HZ is set to 0
-                  channel_format='string', #What data type is being sent. This sends "left", "right", "calib-begin" etc.
-                  source_id='123dsasd') #Uniqie identifier for this stream, 
-
-outlet = StreamOutlet(info) #LSL outlet stream, with info as its settings
-
-
-print('Welcome to Motor Imagery Calibartion!')
-#name = input('Enter your name / indentifier :') #ask for indentifer, not used atm
-start = input('Press any button to start trials!')#press anybutton to start
-
 trial_amount = warmup_trials + (trails_per_class * len(labels)) #total amount of trails to run. Warmups + 60 left + 60 right
 
 for trial in range(1, trial_amount + 1): #Trial loop. Starts at 1
     trial_text.set_text(f"Trail : {trial}")#update trial text to correct trial
+
+    choice = random.choice(range(len(labels) * 10)) % 2 #Is this a left or right trail? Left and Right trials must be in a random order for machine learning. If not the ML will learn the temporal features
+    class_text.set_text(f"{markers[choice].capitalize()}")#update class text to the current calibartion class
     
-    choice = random.choice(range(len(labels))) #Is this a left or right trail? Left and Right trials must be in a random order for machine learning. If not the ML will learn the temporal features
     if trial < warmup_trials: #Warmump trial
         print('This is warump trail')
         trial_text.set_text(f"Trial (Warmup) : {trial}")#update trial text to correct trial
@@ -87,7 +84,6 @@ for trial in range(1, trial_amount + 1): #Trial loop. Starts at 1
         
     start_time = time.time() #what time the waiting starts
     while time.time() - start_time < wait_time:#waiting loop
-        
         print(f"Waiting : {time.time()-start_time:.1f}", end='\r')
 
     if trial % pause_every == 0: #Check if we should pause
