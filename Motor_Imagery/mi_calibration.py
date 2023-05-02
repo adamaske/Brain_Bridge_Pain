@@ -31,7 +31,6 @@ plt.show()
 
 #Welcome to Motor Imagery Calibartion Marker Injection
 print('Welcome to Motor Imagery Calibartion!')
-
 info = StreamInfo(name='MotorImagery-Markers', #Stream name
                   type='Markers', #type
                   channel_count=1, #how many channels. This only need to send one marker at a time
@@ -41,14 +40,14 @@ info = StreamInfo(name='MotorImagery-Markers', #Stream name
 
 outlet = StreamOutlet(info) #LSL outlet stream, with info as its settings
 
-warmup_trials = 2 #Amount of warmup trails. A warmup trial does not count in calibartion
-trails_per_class = 60 #Amount of trials per class (left / right) 
+warmup_trials = 10 #Amount of warmup trails. A warmup trial does not count in calibartion
+trails_per_class = 10 #Amount of trials per class (left / right) 
 perform_time = 3.5 #How long does one trial last, in seconds
 wait_time = 1 #How long to wait between each trial
 pause_every =30 #After x trails, give the user a break
-pause_duration = 10 #How long the trail last
+pause_duration = 5 #How long the trail last
 
-markers = ['left', 'right', 'up', 'down', 'forward', 'backward'] #The marker being sent, this must correspond with targets in NeuroPype Pipline(found in "assign targets" module)
+markers = ['left', 'right']#, 'up', 'down', 'forward', 'backward'] #The marker being sent, this must correspond with targets in NeuroPype Pipline(found in "assign targets" module)
 box_directions = [[-1, 0, 0], [1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]#What x direction does the box move per label
 
 #Make choice before trial starts so that we can display next choice in waiting period
@@ -56,6 +55,7 @@ choice = random.choice(range(len(markers) * 10)) % len(markers) #Is this a left 
                                                                 #If not the ML will learn the temporal features
                                                                 
 trial_amount = warmup_trials + (trails_per_class * len(markers)) #total amount of trails to run. Warmups + 60 left + 60 right,etc
+
 
 for trial in range(1, trial_amount + 1): #Trial loop. Starts at 1
     trial_text.set_text(f"Trail : {trial}")#update trial text to correct trial
