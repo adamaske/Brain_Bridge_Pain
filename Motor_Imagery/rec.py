@@ -1,10 +1,14 @@
-from oscpy.server import OSCThreadServer
-from time import sleep
-from oscpy.client import OSCClient
+from pylsl import resolve_stream
+from pylsl import StreamInlet
 
-osc = OSCThreadServer()
-sock = osc.listen(address='127.0.0.1', port=9002, default=True)
-@osc.address(b'/neuropype')
-def callback(left, right):
-  print("Left prediction : ",round(left,2),"Right prediction : ",round(right,2))
-sleep(100)
+
+
+if __name__ == "__main__":
+  print("Waiting for Motor Imagery stream!")
+  streams = resolve_stream('name', 'mi_lsl')
+  #we're only sending eeg data at this time so we grab that
+  #we can send everything over this same stream, then just grab other elements from the stream
+  inlet  = StreamInlet(streams[0])
+  while True:
+    sample = inlet.pull_sample()
+    print(f"Left : {sample[0][0]:.1f} || Right : {sample[0][1]:.1f}")
