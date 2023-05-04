@@ -12,14 +12,14 @@ if __name__ == "__main__":
   print(f"OSC Client {ip} : {port}")
   sendOSC = True#should we send over OSC
   
-  fakeMessages = False#do fake messages 
-  fake_msg_time = 10#how long
-  fake_msg_firerate = 2
+  fakeMessages = True#do fake messages 
+  fake_msg_time = 3#how long
+  fake_msg_firerate = 5
   if fakeMessages:
     start_time = time.time()
     while time.time() - start_time < fake_msg_time:
       msg = "/neuropype/left"
-      value = 5
+      value = 0.1
       client.send_message(msg, float(value))#send it over OSC
       print(f"Sent fake OSC Msg {msg} : {value}")
       time.sleep(1/fake_msg_firerate)
@@ -30,8 +30,6 @@ if __name__ == "__main__":
   streams = resolve_stream('name', 'mi_lsl')
   inlet  = StreamInlet(streams[0])
   print("Connected to MI LSL Stream")
-  
-  
   
   markers = ['left', 'right'] #, 'up', 'down', 'forward', 'backward'] #The marker being sent, 
                               #this must correspond with targets in NeuroPype Pipline(found in "assign targets" module) 
