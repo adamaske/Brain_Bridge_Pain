@@ -20,10 +20,10 @@ class CustomRecordingThread(Thread):
 def Connect(): #this function connects us to the lsl stream
     print('Connecting to LSL stream!')
     fft_inlet = StreamInlet(resolve_stream('type', 'FFT')[0])
-    sample = fft_inlet.pull_sample()
+    #sample = fft_inlet.pull_sample()
 
     print('FFT Stream Connected')
-    raw_inlet = 0#StreamInlet(resolve_stream('type', 'RAW')[0])
+    raw_inlet = StreamInlet(resolve_stream('type', 'RAW')[0])
     print('RAW Stream Connected')
     return fft_inlet, raw_inlet
 
@@ -39,7 +39,7 @@ def Record_FFT(inlet):
     print(f"FFT Sample Rate : {sample_rate:.1f}")
     print(f"FFT Sample Amount : {num_samples:.1f}") 
     
-    channel_data = channel_data = [[] for i in range(channels)]
+    channel_data = [[] for i in range(channels)]
     
     start_time = time.time()
     while time.time() - start_time < recording_time: #recording for recording_time
@@ -61,7 +61,7 @@ def Record_Raw(inlet):
     print('RAW Recording Running')
     channels = 16
     recording_time = 5
-    sample_rate = 125#inlet.info().nominal_srate()
+    sample_rate = inlet.info().nominal_srate()
     num_samples = int(recording_time * sample_rate)  
     
     print(f"RAW Channels : {channels:.1f}")
@@ -74,21 +74,21 @@ def Record_Raw(inlet):
 
     while time.time() - start_time < recording_time: #recording for recording_time
         sample, timestamp = inlet.pull_sample() #each sample should contain 16 floats, 0th - 15th channel, microvoltage 
-        if timestamp:#only record new samples
-            channel_data.append(sample) #add to list
-            current_time = time.time() - start_time
-            print(f"RAW Elapsed : {current_time}", end='\r')
+        for channel in range(len(sample)):
+            channel_data[channel].append(sample[channel])
+        current_time = time.time() - start_time
+        print(f"RAW Elapsed : {current_time}", end='\r')
     print(f"RAW Length of data : {len(channel_data):.1f}")
     
     raw_data = np.array(channel_data)
     return raw_data
    
 def Keep_Or_Discard_Recording():
-    discard = input("Keep or discard this recording? [K/D]")
-    if discard.lower == 'k':
+    keep = str(input("Keep or discard this recording? [ K / D ]"))
+    if keep.lower() == 'k':
         print('Saving Recording')
         return True
-    elif discard.lower =='d':
+    elif keep.lower() == 'd':
         print('Discarding recording')
         return False
     else:
@@ -101,38 +101,36 @@ if __name__ == '__main__':
     fft_inlet, raw_inlet = Connect()
 
     fft_thread = CustomRecordingThread(fft_inlet, Record_FFT)#init threads
-    #raw_thread = CustomRecordingThread(raw_inlet, Record_Raw)
+    raw_thread = CustomRecordingThread(raw_inlet, Record_Raw)
 
     fft_thread.start()#start both threads
-    #raw_thread.start()
+    raw_thread.start()
     
     fft_thread.join()#wait for threads to complete
-    #raw_thread.join()
+    raw_thread.join()
  
     fft_data = fft_thread.value#obtain values from functions they ran
-    #raw_data = raw_thread.value
+    raw_data = raw_thread.value
     
-    for channel in range(16):
-        plt.plot(fft_data[channel][30][:60])
-    plt.ylim(0, 100)
-    plt.show()
     print(f"FFT Data is a {fft_data.shape} array")
-    #fft_channels = len(fft_data)
-    #fft_data_points_amount = len(fft_data[0])
-    #print(f"FFT Data is a {fft_channels}x{fft_data_points_amount} array")
+    fft_channels = len(fft_data)
+    fft_data_points_amount = len(fft_data[0])
+    print(f"FFT Data is a {fft_channels}x{fft_data_points_amount} array")
     
-    #raw_channels = len(raw_data)
-    #raw_data_points_amount = len(raw_data[0])
-    #print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
+    raw_channels = len(raw_data)
+    raw_data_points_amount = len(raw_data[0])
+    print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
     
-    #timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
-    #intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
-    #
-    #keep = Keep_Or_Discard_Recording()
+    timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
+    intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
+    keep = Keep_Or_Discard_Recording()
 
     #save
-    #time = np.linspace(0, 5, len(raw_data))
-    #plt.plot(time, raw_data)
+    t = np.linspace(0, 5, len(raw_data[0]))
+    for channel in range(len(raw_data)):
+        plt.plot(t, raw_data[channel])
+        plt.show()
+    
     #plt.ylim(-200, 200)
     #plt.show()
     #print(fft_data)

@@ -12,7 +12,7 @@ if __name__ == "__main__":
   print(f"OSC Client {ip} : {port}")
   sendOSC = True#should we send over OSC
   
-  fakeMessages = True#do fake messages 
+  fakeMessages = False#do fake messages 
   fake_msg_time = 3#how long
   fake_msg_firerate = 5
   if fakeMessages:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
       
     
     if sendOSC:#send highest prediction over OSC
-      msg = f"/nueropype/{markers[highest_prediction_index]}" #store message, this must correspond to the ReceiveMentalCommand function in Unreal Engine
+      msg = f"/neuropype/{markers[highest_prediction_index]}" #store message, this must correspond to the ReceiveMentalCommand function in Unreal Engine
       strength = predictions[highest_prediction_index] #how strong is the prediction, get from cached prediction
       client.send_message(msg, float(strength))#send it over OSC
        
