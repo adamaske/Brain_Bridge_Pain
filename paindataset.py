@@ -1,12 +1,17 @@
-from pylsl import resolve_stream
+from pylsl import resolve_stream#networking
 from pylsl import StreamInlet
-import time
+
+from scipy import signal#math
 import numpy as np
-import asyncio
-import matplotlib.pyplot as plt
-from threading import Thread
-from multiprocessing import Process
-from scipy import signal
+
+import matplotlib.pyplot as plt#visuals
+
+import os#files
+import time#time
+import json#files
+
+from threading import Thread#custom thread class
+
 
 class CustomRecordingThread(Thread):
     def __init__(self, *args): #args for what inlet to use
@@ -18,16 +23,6 @@ class CustomRecordingThread(Thread):
         target = self.args[1] #fucntion to run
         self.value = target(inlet) #record
         
-def Connect(): #this function connects us to the lsl stream
-    print('Connecting to LSL stream!')
-    fft_inlet = StreamInlet(resolve_stream('type', 'FFT')[0])
-    #sample = fft_inlet.pull_sample()
-
-    print('FFT Stream Connected')
-    raw_inlet = StreamInlet(resolve_stream('type', 'RAW')[0])
-    print('RAW Stream Connected')
-    return fft_inlet, raw_inlet
-
 def Record_FFT(inlet):
     print('FFT Recording Running')
     channels = 16
@@ -87,93 +82,93 @@ def Record_Raw(inlet):
 def Keep_Or_Discard_Recording():
     keep = str(input("Keep or discard this recording? [ K / D ]"))
     if keep.lower() == 'k':
-        print('Saving Recording')
-        return True
+        return 1
     elif keep.lower() == 'd':
-        print('Discarding recording')
-        return False
+        return 0
     else:
         print('Not recognized answer!')
         return Keep_Or_Discard_Recording()
+
+print('Connecting to LSL stream!')
+fft_inlet = StreamInlet(resolve_stream('type', 'FFT')[0])
+fft_thread = CustomRecordingThread(fft_inlet, Record_FFT)#init threads
+print('FFT Stream Connected')
+
+raw_inlet = StreamInlet(resolve_stream('type', 'RAW')[0])
+raw_thread = CustomRecordingThread(raw_inlet, Record_Raw)
+print('RAW Stream Connected')
  
-if __name__ == '__main__':
-    skip_connection = True
+fft_thread.start()#start both threads
+raw_thread.start()
 
-    fft_inlet, raw_inlet = Connect()
+fft_thread.join()#wait for threads to complete
+raw_thread.join()
 
-    fft_thread = CustomRecordingThread(fft_inlet, Record_FFT)#init threads
-    raw_thread = CustomRecordingThread(raw_inlet, Record_Raw)
+fft_data = fft_thread.value#obtain values from functions they ran
+raw_data = raw_thread.value
 
-    fft_thread.start()#start both threads
-    raw_thread.start()
-    
-    fft_thread.join()#wait for threads to complete
-    raw_thread.join()
- 
-    fft_data = fft_thread.value#obtain values from functions they ran
-    raw_data = raw_thread.value
-    
-    print(f"FFT Data is a {fft_data.shape} array")
-    fft_channels = len(fft_data)
-    fft_data_points_amount = len(fft_data[0])
-    print(f"FFT Data is a {fft_channels}x{fft_data_points_amount} array")
-    
-    raw_channels = len(raw_data)
-    raw_data_points_amount = len(raw_data[0])
-    print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
-    
-    if False:#do saving and such, skip for testing
+print(f"FFT Data is a {fft_data.shape} array")
+fft_channels = len(fft_data)
+fft_data_points_amount = len(fft_data[0])
+print(f"FFT Data is a {fft_channels}x{fft_data_points_amount} array")
+
+raw_channels = len(raw_data)
+raw_data_points_amount = len(raw_data[0])
+print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
+
+pain = 0
+timing = 0
+intensity = 0
+keep = 0
+if True:#do saving and such, skip for testing
+    pain = int(input("Did pain happend during this recording? [ 1 / 0 ]"))
+    if pain == 1:
         timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
         intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
-        keep = Keep_Or_Discard_Recording()
+    keep = Keep_Or_Discard_Recording()
 
-    #spectogra 
-    #save
-    #N = len(raw_data[0])#amount of sample points, 1231
-    #dt = 1/ (N / 5)#how many samples per second, = 1 / (sample freq = point / time)
-    #plt.specgram(raw_data[0], NFFT=128, Fs=1/dt, noverlap=120)
- 
-    #compute fft from Channel 0
-    print(f"Computing FFT from Channel 0")
-    print(f"Channel 0 data is a {raw_data[0].shape} array")
+if keep == 0:#Exit if we dont keep the file
+    exit()
     
-    data = raw_data[0]
-    t = np.linspace(0, 5, len(data))
-    plt.plot(t, data)
-    plt.show()
-    fft = np.fft.fft(data)
-    
-    fft = np.abs(fft) 
-    fft_scaled = fft / len(data)
-    freqs =  np.fft.fftfreq(len(data))
-    plt.plot(freqs, fft_scaled)
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Amplitude')
-    plt.show()
-    orig = np.fft.ifft(fft)
-    
-   #print(f"Shape of FFT computed from channel 0 {fft.shape}")
-   #
-   #print(f"Shape of INVERSE FFT computed from channel 0 {orig.shape}")
+user = "Adam"#what person just recorded this
+recording_count = 0#start at 0
+file_prefix = "pain_recording_"#file name 
+file_suffix = ".json"#suffix to look for when looking for existing files
 
-   #t = np.linspace(0, 5, len(raw_data[0]))#
-   #plt.plot(t, orig)
-   #plt.show()
-    #plt.specgram(raw_data[0], NFFT=128, Fs=1/(1/250), noverlap=120)
-    #plt.colorbar()
-    #plt.show()
-    #plt.plot(fft)
-    #plt.show()
-    #t = np.linspace(0, 5, len(raw_data[0]))
-    #for channel in range(len(raw_data)):
-    #    plt.plot(t, raw_data[channel])
-    #plt.show()
-    #plt.ylim(-200, 200)
-    #plt.show()
-    #print(fft_data)
-    #print(raw_data)
-    
-    #transformed = Transform_FFT_Data(data)
-    
-    
-    
+path = os.path.join(os.getcwd(), "Datasets", user)#get directory to save recording
+file_path = os.path.join(path, file_prefix + user + "_" + str(recording_count) + file_suffix)#while this file is found, iterate counter
+
+while os.path.isfile(file_path):#find how many recording files there are
+    recording_count = recording_count + 1#iterate counter because the file with this index exists
+    file_path = os.path.join(path, file_prefix + user + "_" + str(recording_count) + file_suffix)#setnew file path
+
+index = str(recording_count)
+print(f"Saving files with index {index} at {path}!")
+
+data = {#Json object for saving the data in this recording
+    "name" : user,
+    "pain" : pain,
+    "timing" : timing,
+    "intensity" : intensity
+}
+json_file_name = file_prefix + user + "_" + index + ".json"
+json_file_path = os.path.join(path, json_file_name)
+with open(json_file_path, "w") as file:#open file
+    json.dump(data, file)#fill file with data object
+print(f"JSON File saved : {json_file_name}")
+
+
+file_suffix = ".npy"#now saving numpy arrays
+#fft data saving
+fft_prefix = "pain_recoding_fft_"
+fft_file_name = fft_prefix + index + file_suffix
+fft_file_path = os.path.join(path, fft_file_name) 
+np.save(fft_file_path, fft_data)
+print(f"Saved FFT data : {fft_file_name}!")
+
+#raw data saving 
+raw_prefix = "pain_recoding_raw_"
+raw_file_name = raw_prefix + index + file_suffix
+raw_file_path = os.path.join(path, raw_file_name)  
+np.save(raw_file_path, raw_data)#save raw to file
+print(f"Saved RAW data : {raw_file_name}!")

@@ -1,9 +1,11 @@
 import numpy as np
 from scipy.fft import fft
-data = np.random.uniform(-4, 4, 1250)
-fft_data = fft(data)
-fft_abs = np.abs(fft_data)
 import matplotlib.pyplot as plt
+import os
 
-plt.plot(data)
-plt.show()
+  
+user = "Adam"
+recording = 0
+
+base_name = "pain_recording_" + str(recording)
+print(base_name)
