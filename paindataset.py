@@ -6,6 +6,7 @@ import asyncio
 import matplotlib.pyplot as plt
 from threading import Thread
 from multiprocessing import Process
+from scipy import signal
 
 class CustomRecordingThread(Thread):
     def __init__(self, *args): #args for what inlet to use
@@ -121,16 +122,52 @@ if __name__ == '__main__':
     raw_data_points_amount = len(raw_data[0])
     print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
     
-    timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
-    intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
-    keep = Keep_Or_Discard_Recording()
+    if False:#do saving and such, skip for testing
+        timing = input("At what second (0-5) did the pain occur?")#prompt user for when pain occured
+        intensity = input("How intense was the pain (0-10)?")#prompt user for intensity
+        keep = Keep_Or_Discard_Recording()
 
+    #spectogra 
     #save
-    t = np.linspace(0, 5, len(raw_data[0]))
-    for channel in range(len(raw_data)):
-        plt.plot(t, raw_data[channel])
-        plt.show()
+    #N = len(raw_data[0])#amount of sample points, 1231
+    #dt = 1/ (N / 5)#how many samples per second, = 1 / (sample freq = point / time)
+    #plt.specgram(raw_data[0], NFFT=128, Fs=1/dt, noverlap=120)
+ 
+    #compute fft from Channel 0
+    print(f"Computing FFT from Channel 0")
+    print(f"Channel 0 data is a {raw_data[0].shape} array")
     
+    data = raw_data[0]
+    t = np.linspace(0, 5, len(data))
+    plt.plot(t, data)
+    plt.show()
+    fft = np.fft.fft(data)
+    
+    fft = np.abs(fft) 
+    fft_scaled = fft / len(data)
+    freqs =  np.fft.fftfreq(len(data))
+    plt.plot(freqs, fft_scaled)
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('Amplitude')
+    plt.show()
+    orig = np.fft.ifft(fft)
+    
+   #print(f"Shape of FFT computed from channel 0 {fft.shape}")
+   #
+   #print(f"Shape of INVERSE FFT computed from channel 0 {orig.shape}")
+
+   #t = np.linspace(0, 5, len(raw_data[0]))#
+   #plt.plot(t, orig)
+   #plt.show()
+    #plt.specgram(raw_data[0], NFFT=128, Fs=1/(1/250), noverlap=120)
+    #plt.colorbar()
+    #plt.show()
+    #plt.plot(fft)
+    #plt.show()
+    #t = np.linspace(0, 5, len(raw_data[0]))
+    #for channel in range(len(raw_data)):
+    #    plt.plot(t, raw_data[channel])
+    #plt.show()
     #plt.ylim(-200, 200)
     #plt.show()
     #print(fft_data)
