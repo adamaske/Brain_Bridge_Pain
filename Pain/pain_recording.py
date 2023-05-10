@@ -139,9 +139,8 @@ current_dir = pathlib.Path(__file__).parent#get current folder
 path = os.path.join(current_dir, "Datasets", user)#get directory to save recording
 if not os.path.exists(path):#if there is no folder for this user, then create one
     os.makedirs(path)
-file_path = os.path.join(path, file_prefix + user + "_" + str(recording_count) + file_suffix)#while this file is found, iterate counter
-
     
+file_path = os.path.join(path, file_prefix + user + "_" + str(recording_count) + file_suffix)#while this file is found, iterate counter
 while os.path.isfile(file_path):#find how many recording files there are
     recording_count = recording_count + 1#iterate counter because the file with this index exists
     file_path = os.path.join(path, file_prefix + user + "_" + str(recording_count) + file_suffix)#setnew file path
