@@ -72,7 +72,8 @@ for index in range(len(fft_files)):
 print(f"RAW Files : {len(raw_files)}")
 for index in range(len(raw_files)):
     print(f"Shape of RAW data {index} : {raw_files[index].shape}")
-    
+
+exit() 
 import tensorflow as tf
 from tensorflow.keras.layers import Conv1D, Flatten, Dense
 
