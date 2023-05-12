@@ -116,10 +116,10 @@ raw_channels = len(raw_data)
 raw_data_points_amount = len(raw_data[0])
 print(f"RAW Data is a {raw_channels}x{raw_data_points_amount} array")
 
-pain = 0
-timing = 0
-intensity = 0
-keep = 0
+pain = 0#did pain happend during this recording ? 1 = yes, 0 = no
+timing = 0#when did the pain happend
+intensity = 0#how intense was the pain
+keep = 0#keep this recording or not ? 1 = yes, 0 = no
 if True:#do saving and such, skip for testing
     pain = int(input("Did pain happend during this recording? [ 1 / 0 ]"))
     if pain == 1:

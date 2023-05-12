@@ -56,6 +56,45 @@ for recording in range(recording_count):#loop trough all indicies
     raw_files.append(raw_data)
     
 print(f"JSON Files : {len(json_objects)}")
-
+for user in range(len(json_objects)):
+    data = json_objects[user]
+    name = data["name"]
+    pain = data["pain"]
+    timing = data["timing"]
+    intensity = data["intensity"]
+    if pain == 1:
+        print(f"User {name}, Pain : 1, Timing : {timing}, Intensty : {intensity}")
+    else:
+        print(f"User : {name}, Pain : 0")
 print(f"FFT Files : {len(fft_files)}")
+for index in range(len(fft_files)):
+    print(f"Shape of FFT data {index} : {fft_files[index].shape}")
 print(f"RAW Files : {len(raw_files)}")
+for index in range(len(raw_files)):
+    print(f"Shape of RAW data {index} : {raw_files[index].shape}")
+    
+import tensorflow as tf
+from tensorflow.keras.layers import Conv1D, Flatten, Dense
+
+# Define the model
+model = tf.keras.Sequential([
+    Conv1D(32, 3, activation='relu', input_shape=(1000, 16)),
+    Conv1D(64, 3, activation='relu'),
+    Conv1D(128, 3, activation='relu'),
+    Flatten(),
+    Dense(64, activation='relu'),
+    Dense(32, activation='relu'),
+    Dense(3, activation='linear')
+])
+
+# Compile the model
+model.compile(optimizer='adam',
+              loss='mean_squared_error',
+              metrics=['mae'])
+
+# Train the model
+model.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test))
+
+# Make predictions
+predictions = model.predict(test_data)
+print(predictions)
