@@ -41,10 +41,10 @@ info = StreamInfo(name='MotorImagery-Markers', #Stream name
 outlet = StreamOutlet(info) #LSL outlet stream, with info as its settings
 
 warmup_trials = 5 #Amount of warmup trails. A warmup trial does not count in calibartion
-trails_per_class = 10 #Amount of trials per class (left / right) 
+trails_per_class = 20 #Amount of trials per class (left / right) 
 perform_time = 3.5 #How long does one trial last, in seconds
-wait_time = 1 #How long to wait between each trial
-pause_every =30 #After x trails, give the user a break
+wait_time = 0.5 #How long to wait between each trial
+pause_every =100 #After x trails, give the user a break
 pause_duration = 5 #How long the trail last
 
 markers = ['left', 'right']#, 'up', 'down', 'forward', 'backward'] #The marker being sent, this must correspond with targets in NeuroPype Pipline(found in "assign targets" module)
@@ -114,8 +114,8 @@ for trial in range(1, trial_amount + 1): #Trial loop. Starts at 1
     while time.time() - start_time < wait_time:#waiting loop
         print(f"Waiting : {time.time()-start_time:.1f}", end='\r')
         
-    print(f"Pausing for {pause_duration:.1f} seconds!")
     if trial % pause_every == 0: #Check if we should pause
+        print(f"Pausing for {pause_duration:.1f} seconds!")
         start_time = time.time()
         while time.time() - start_time < pause_duration:
             print(f"Paused : {time.time()-start_time:.1f}", end='\r')

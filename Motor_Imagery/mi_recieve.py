@@ -45,7 +45,7 @@ if __name__ == "__main__":
     for marker in range(len(markers)):#each sample gives us the prediction for every marker
       label = markers[marker]
       value = sample[marker]
-      print(f"{label.capitalize()} : {value:.1f}")#prints the predctions
+      #print(f"{label.capitalize()} : {value:.1f}")#prints the predctions
       
       predictions[marker] = value#cache the prediction
       
