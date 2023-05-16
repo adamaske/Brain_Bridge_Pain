@@ -12,14 +12,14 @@ if __name__ == "__main__":
   print(f"OSC Client {ip} : {port}")
   sendOSC = True#should we send over OSC
   
-  fakeMessages = False#do fake messages 
+  fakeMessages = True#do fake messages 
   fake_msg_time = 3#how long
-  fake_msg_firerate = 5
+  fake_msg_firerate = 100
   if fakeMessages:
     start_time = time.time()
     while time.time() - start_time < fake_msg_time:
       msg = "/neuropype/left"
-      value = 0.1
+      value = 1
       client.send_message(msg, float(value))#send it over OSC
       print(f"Sent fake OSC Msg {msg} : {value}")
       time.sleep(1/fake_msg_firerate)
