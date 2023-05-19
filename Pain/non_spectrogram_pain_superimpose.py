@@ -112,13 +112,13 @@ for sample in range(len(data)):#loop to create
             plt.plot(t, reconstructed_time_series)
             plt.xlabel('Time')
             plt.ylabel('Amplitude')
-            plt.title('Reconstructed Signal')
+            plt.title('Reduced 5 Hz Contribution')
             plt.subplot(2, 2, 4)
             #------ MODFIFED FFT -------
             plt.plot(fft_freqs, normalized_magnitude_spectrum)
             plt.xlabel('Amplitude')
             plt.ylabel('Frequency')
-            plt.title('Modified FFT')
+            plt.title('Unmodified FFT')
 
             plt.tight_layout()
             plt.show()

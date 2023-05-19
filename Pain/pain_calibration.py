@@ -7,48 +7,50 @@ import matplotlib.pyplot as plt
 import json
 from scipy.signal import stft 
 
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+
+
 #THIS SCRIPT LOADS EEG DATA THAT HAS BEEN IMPOSED WITH PAIN AND TRAINS A CNN WITH IT
 channels = 16
 recording_time = 5
 sample_rate = 250
 
 data = np.zeros((0, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
+
 all_labels = []
 current_dir = pathlib.Path(__file__).parent#get current folder
 path = os.path.join(current_dir, "Datasets", "PainData")#get directory to save recording
-json_file_prefix = "imposed_eeg_data_label_"
-json_file_suffix = ".json"
 
-file_prefix = "imposed_eeg_data_"
-file_suffix = ".npy"
-file_index = 0
-
-file_name = file_prefix + str(file_index) + file_suffix
+#------ LOAD EEG DATA WITH PAIN IMPOSED -------------
+file_name = "imposed_eeg_data.npy"
 file_path = os.path.join(path, file_name)
-while os.path.isfile(file_path):#continue until there is no more file
-    samples = np.load(file_path)
-    print(f"Loaded sample {samples.shape} at {file_name}!")
 
-    data = np.vstack((data, samples))#add to data
-    print(f"Data : {data.shape}")
-    
-    #LOAD JSON
-    
-    json_file_name = json_file_prefix + str(file_index) + json_file_suffix
-    json_file_path = os.path.join(path, json_file_name)
+if os.path.isfile(file_path):
+    print(f"{file_name} exists!")
+    loaded_data = np.load(file_path)
+    print(f"Loaded data : {loaded_data.shape} from {file_name}")
+    data = loaded_data
+else:
+    print(f"{file_path} does not exist, exiting!")
+    exit()
+
+#-------- LOAD JSON LABELS --------------
+json_file_name = "imposed_eeg_data_labels.json"
+json_file_path = os.path.join(path, json_file_name)
+
+if os.path.isfile(json_file_path):
+    print(f"{json_file_name} exists!")
+    loaded_json = 0
     with open(json_file_path, "r") as file:
-        labels = json.load(file)
-    for label in range(len(labels)):
-        all_labels.append(labels[label])
-    print(f"Labels : {len(labels)}")
+        loaded_json = json.load(file)
+        print(f"Loaded json : {len(loaded_json)} from {json_file_name}")
+        all_labels = loaded_json
+else:
+    print(f"{json_file_path} does not exist, exiting!")
+    exit()
     
-    file_index = file_index + 1#iterate to next file
-    file_name =  file_prefix + str(file_index) + file_suffix
-    file_path = os.path.join(path, file_name)#set new file path
-print(f"Found {file_index} files!")
-print(f"All data shape: {data.shape}")
-print(f"All labels shape: {len(all_labels)}")
-
+#------ CREATE NUMPY ARRAY FROM LABELS -------------
 new_labels = []
 for label in range(len(all_labels)): # CONVERT THE JSON OBJECTS INTO A USEABLE NUMPY ARRAY
     timing = all_labels[label]["timing"]
@@ -59,7 +61,8 @@ for label in range(len(all_labels)): # CONVERT THE JSON OBJECTS INTO A USEABLE N
 labels = np.array(new_labels)#usable labels
 print(f"Labels : {labels.shape}")
 
-for sample in range(len(data)):
+#------- CREATE SPECTROGRAMS FROM EEG DATA ------------
+for sample in range(0):
     for channel in range(len(data[sample])):
         signal = data[sample][channel]#the signal 
         num_points = len(data[sample][channel])#amount of points in this signal
@@ -133,20 +136,17 @@ for sample in range(len(data)):
         plt.show()
         exit()    
     
-
-
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
 # Preprocess the data
-data = np.expand_dims(data, axis=-1)
+expanded_data = np.expand_dims(data, axis=-1)
 #data = data / 255.0  # Normalizing between 0 and 1
-print(data.shape)
+print(f"Expanded data : {expanded_data.shape}")
+
 # Split the data into training and validation sets
 validation_split = 0.2  # 20% for validation
-num_validation_samples = int(validation_split * data.shape[0])
-train_data = data[:-num_validation_samples]
+num_validation_samples = int(validation_split * expanded_data.shape[0])
+train_data = expanded_data[:-num_validation_samples]
 train_labels = labels[:-num_validation_samples]
-val_data = data[-num_validation_samples:]
+val_data = expanded_data[-num_validation_samples:]
 val_labels = labels[-num_validation_samples:]
 
 # Create the TensorFlow model
@@ -184,3 +184,11 @@ predictions = model.predict(new_data)
 
 # Print the predictions
 print(predictions)
+
+#----- SAVE TF MODEL -----------
+save_model = False
+overwrite_model = True
+if save_model:
+    model_file_name = "pain_calibrated_model.tf"
+    model_file_path = os.path.join(path, model_file_name)
+    model.save(model_file_path, overwrite=overwrite_model)
