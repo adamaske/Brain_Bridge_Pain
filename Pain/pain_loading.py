@@ -20,7 +20,7 @@ while os.path.isfile(file_path):#find how many recording files there are
     recording_count = recording_count + 1#iterate counter because the file with this index exists
     file_path = os.path.join(path, file_prefix + user + "_" + str(recording_count) + file_suffix)#setnew file path
 
-index = str(recording_count)#
+index = str(recording_count)#The amount of files
 print(f"Loading files until index {index} at {path}!")
 
 json_objects = []

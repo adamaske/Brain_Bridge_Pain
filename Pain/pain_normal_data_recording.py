@@ -8,68 +8,87 @@ import pathlib#paths and files
 #THIS MUST CORRESEPOND WITH OPENBCIGUI NETOWRKING
 inlet = StreamInlet(resolve_stream('type', 'RAW')[0])#RAW = time series, FFT = ffts
 
-sample_time = 5
+num_samples = 3#How many samples to record this session ?
 
-num_samples = 3
+channels = 16 #how many channels are there 
+recording_time = 5#How long does one sample last ? 
 
-channels = 16
-recording_time = 5
-sample_rate = inlet.info().nominal_srate()
-#num_samples = int(recording_time * sample_rate)  
+sample_rate = inlet.info().nominal_srate()#how fast does the inlet output
     
 print(f"Channels : {channels:.1f}")
 print(f"Recording Time : {recording_time:.1f}")
 print(f"Sample Rate : {sample_rate:.1f}")
-print(f"Sample Amount : {num_samples:.1f}") 
-samples = []#store all the 5 seconds recordings
+print(f"Sample Amount : {num_samples:.1f}")
+ 
+samples = np.zeros((0, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
 
-for sample in range(num_samples):
+
+for sample in range(1, num_samples+1):
     print(f"Starting recording {sample:.0f}!")
-    recording = [[] for i in range(channels)]#save the 5 seconds of data here
+
+    start_time = time.time()#cache the time
     
-    start_time = time.time()
-    for re in range(int(recording_time * sample_rate)):
-        data, timestamp = inlet.pull_sample()#for raw data, this should fire 16 data points 250 times per second
-        if re == 0:
-            print(f"Inlet data : {len(data)}")
-        for channel in range(len(data)):
-            recording[channel].append(data[channel])
-        #recording.append(data)#add data to recording
+    recording = [[] for i in range(channels)]#Cache the incoming data
+    
+    for data_point in range(int(recording_time * sample_rate)):#
+        raw_data, timestamp = inlet.pull_sample()#for raw data, this should fire 16 data points 250 times per second
+        
+        for channel in range(len(raw_data)):#for each channel
+            recording[channel].append(raw_data[channel])#add each channel to the recording
     print(f"Finished recording {sample}")
     
-    data = np.array(recording)
+    time_recroded = time.time() - start_time#How long did the recording last ? 
+    print(f"Recorded for {time_recroded:.1f} seconds!")
     
-    print(f"Recorded data : {len(recording)} x {len(recording[0])}")
-    samples.append(recording)
+    recorded_data = np.array(recording)#make to numpy array
+    print(f"Recorded data : {recorded_data.shape}")
+    
+    samples = np.concatenate((samples, np.expand_dims(recorded_data, axis=0)), axis=0)#Add recording to the samples
+    print(f"Samples : {samples.shape}")
 
-print(f"Recording samples is finished!")
+print(f"Recording is finished!")
+print(f"Samples : {samples.shape}")
+
+#-----------SAVE THE RECORDED DATA TO FILE----------------
 
 current_dir = pathlib.Path(__file__).parent#get current folder
 path = os.path.join(current_dir, "Datasets", "NormalData")#get directory to save recording
-file_prefix = "normal_eeg_data_"
-file_suffix = ".npy"
 
-save_individually = False
+file_name = "normal_eeg_data.npy"#file name
+file_path = os.path.join(path, file_name)#file path
+old_data = 0
 
-file_index = 3
-if save_individually == False:
-    file_name = file_prefix + str(file_index) + file_suffix#file name
-    file_path = os.path.join(path, file_name)#file path
-    data = np.array(samples)#create np array from it
-    np.save(file_path, data)#save it
-    print(f"Saved data : {data.shape} at {file_path}!")    
-    exit()
+data = np.array(samples)#Create numpt array from the recordings
 
-start_from = 100
-for sample in range(len(samples)):
-    data = np.array(samples[sample])
-    if sample - start_from == 0:
-        print(f"Saving data : {data.shape}")
+force_file_override = False#Enabling this will clear the previously existing file
+#TODO implement file override
+if force_file_override:
+    if os.path.isfile(file_path):#does the file already exist ? 
+        print(f"{file_name} exists and is being overwritten!")
         
-    file_name = "normal_eeg_data_" + str(sample + start_from) + ".npy"
-    file_path = os.path.join(path, file_name)
-    #np.save(file_path, data)
-    #save 
-#what does 
-data = np.array(samples)
-print(f"Samples : {data.shape}")
+    data = np.array(samples)#Create array from samples
+    np.save(file_path, data)#Save the data
+    print(f"Saved {data.shape} at {file_name}")
+    exit()
+    
+if os.path.isfile(file_path): #If the file already exist we add to the file instead of overriding it
+    print(f"{file_name} exists!")
+    
+    old_data = np.load(file_path)#Get the arrays that already exists
+    print(f"Old data : {old_data.shape}")#check shape of old data
+    
+    data = np.array(samples)#create np array from the samples recorded
+    new_data = np.vstack((old_data, data))#Add new data to old data
+    print(f"New data : {new_data.shape}")
+    
+    np.save(file_path, new_data)#Save the new data
+    
+    print(f"Saved a {new_data.shape} numpy array to {file_name}")
+
+else:#The files does not exist already
+    print(f"{file_name} does not exist!")
+    #Create array from samples
+    np.save(file_path, data)#Save the data
+    print(f"Saved {data.shape} at {file_name}")
+    
+    
