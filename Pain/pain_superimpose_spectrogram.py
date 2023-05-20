@@ -12,7 +12,7 @@ from scipy.signal import istft
 channels = 16
 recording_time = 5
 sample_rate = 250
-
+pain_impose_amount = 10 #how many pain imposed signals to create
 data = np.zeros((0, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
 
 
@@ -39,14 +39,14 @@ else:
 import pain_artifacts
 all_artifacts = pain_artifacts.pain_artifacts
 
-name, band_ranges, effected_channels, effect = pain_artifacts.ParseArtifact(0) 
-print(name, band_ranges, effected_channels, effect)
-
+modified_signals = []
 labels = []#Created labels
-for sample in range(len(data)):#loop to create
+for sample in range(pain_impose_amount):#loop to create
+    sample %= len(data)
     pain = 1#random.randint(1,100)#pain or not
     timing = random.randint(1, recording_time-1)
     intensity = random.randint(1, 10)
+    print()
     print(f"Timing : {timing}")
     print(f"Intesnity : {intensity}")
 
@@ -72,7 +72,7 @@ for sample in range(len(data)):#loop to create
         
         window_size = 128
         hop_length = 64
-        original_frequencies, original_times, original_spectrogram = stft(data[sample][channel], window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
+        original_frequencies, original_times, original_spectrogram = stft(time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
         
         #---- MODIFYING THE SPECTROGRAM ------
         at_time = int((timing / np.max(original_times)) * len(original_times))
@@ -98,7 +98,7 @@ for sample in range(len(data)):#loop to create
 
         
         # Plot the spectrogram
-        if True:
+        if False:
             t = np.linspace(0, recording_time, num_samples)#time dimension
 
             #--- ORIGINAL TIME SERIES ------
@@ -142,8 +142,10 @@ for sample in range(len(data)):#loop to create
             plt.tight_layout()
             plt.show()
             exit()
-            
+        
+        #------ OVERWRITE OLD TIME SERIES WITH NEW -------
         data[sample][channel] = reconstructed_time_series#overwrite the previous data with the new data
+        modified_signals.append(reconstructed_time_series)
     #---- CREATE LABEL ------
     obj = {
         "pain" : pain,
@@ -151,9 +153,14 @@ for sample in range(len(data)):#loop to create
         "intensity" : intensity
     }
     labels.append(obj)#add label to labels
-    print(f"Making sample {sample:.1f}", end='\r')
-print(f"Length of labels {len(labels)}")
 
+if False:
+    modified_signals = np.array(modified_signals)
+    for signal in range(len(modified_signals)):
+        t = np.linspace(0, recording_time, len(modified_signals[signal]))
+        plt.plot(t, modified_signals[signal])
+        plt.show()
+    
 #------- SAVE THE IMPOSED DATA -----------------
 
 #----FILE PATHS---------
