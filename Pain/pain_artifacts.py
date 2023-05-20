@@ -4,9 +4,11 @@ import os
 pain_artifacts = [
     {
         "artifact_name" : "EXAMPLE",
-        "band_ranges" : [(8, 13),],
+        "band_ranges" : [(8, 13), (30, 40)],
         "channels" : [ 0, 1, 2],
         "effect" : 1,
+        "delay" : 0,
+        "duration" : 1
     },
 ]
 
@@ -18,10 +20,10 @@ def ParseArtifact(index):#more easily read an artifact
     channels        = artifact["channels"]
     effect          = artifact["effect"]
     
-    print(f"Artiface : {name}")
-    print(f"Band ramges : {band_ranges}")
-    print(f"Channels : {channels}")
-    print(f"Effect : {effect}")
+    #print(f"Artiface : {name}")
+    #print(f"Band ramges : {band_ranges}")
+    #print(f"Channels : {channels}")
+    #print(f"Effect : {effect}")
     return name, band_ranges, channels, effect
 
 name, band_ranges, affected_channels, effect = ParseArtifact(0)#parse the artifact

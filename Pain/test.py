@@ -1,11 +1,9 @@
-import pain_artifacts
-all_artifacts = pain_artifacts.pain_artifacts
-for artifact in range(len(all_artifacts)):
-    obj = all_artifacts[artifact]
-    name = obj["artifact_name"]
-    band_range = obj["band_range"]
-    channels = obj["channels"]
+import matplotlib.pyplot as plt
+import numpy as np
 
-    print(f"Artiface : {name}")
-    print(f"Band ramge : {band_range}")
-    print(f"Channels : {channels}")
+time = np.linspace(0, 5, 1000)
+
+wave = np.random.rand(1000)
+
+plt.plot(time, wave)
+plt.show()

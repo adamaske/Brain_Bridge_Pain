@@ -5,6 +5,8 @@ import os
 import pathlib#paths and files
 import matplotlib.pyplot as plt
 import json
+from scipy.signal import stft
+from scipy.signal import istft
 #import data set of normal EEG data
 
 channels = 16
@@ -45,7 +47,9 @@ for sample in range(len(data)):#loop to create
     pain = 1#random.randint(1,100)#pain or not
     timing = random.randint(1, recording_time-1)
     intensity = random.randint(1, 10)
-    
+    print(f"Timing : {timing}")
+    print(f"Intesnity : {intensity}")
+
     #-----CHOOSE RANDOM ARTIFACT -----------
     artifact_index = random.randrange(0, len(all_artifacts))#get a random index
     artifact = all_artifacts[artifact_index]#gets the artifact
@@ -54,76 +58,92 @@ for sample in range(len(data)):#loop to create
     #----- APPLY ------
     for pa_channel in affected_channels:
         channel = pa_channel#Channel index that will be affected
-        
+        #----- UNMODIFIED ------
         time_series = data[sample][channel].copy()#get the time series at this channel
         num_samples = len(time_series)#length of time series
         sample_rate = num_samples / recording_time#how many samples per second is this recording for
         
         fft_data = np.fft.rfft(time_series)#get freqeuency spectrum from time series
         
-        magnitude_spectrum = np.abs(fft_data)#get the magnitudes
-        normalized_magnitude_spectrum = magnitude_spectrum / len(time_series)#normalize them to get correct amplitude
-        unmodified_mangitude_spectrum = normalized_magnitude_spectrum.copy()#copy for testing
-        phase_spectrum = np.angle(fft_data)#phases
-        
-        fft_freqs = np.fft.rfftfreq(num_samples, d=1/sample_rate)#get the frequencies
+        unmodified_magnitude_spectrum = np.abs(fft_data)#get the magnitudes
+        unmodified_normalized_magnitude_spectrum = unmodified_magnitude_spectrum / len(time_series)#normalize them to get correct amplitude
 
-        for band_range in band_ranges:#go trough every band range this artifact affects
-            start_frequency = band_range[0]#where does this band range start
-            end_frequency = band_range[1]#where does it end
+        unmodified_fft_freqs = np.fft.rfftfreq(num_samples, d=1/sample_rate)#get the frequencies
+        
+        window_size = 128
+        hop_length = 64
+        original_frequencies, original_times, original_spectrogram = stft(data[sample][channel], window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
+        
+        #---- MODIFYING THE SPECTROGRAM ------
+        at_time = int((timing / np.max(original_times)) * len(original_times))
+        modified_spectrogram = original_spectrogram.copy()
+        for band_range in band_ranges:
+            from_freq = int((band_range[0] / np.max(original_frequencies)) * len(original_frequencies))
+            to_freq = int((band_range[1] / np.max(original_frequencies)) * len(original_frequencies))
+            modified_spectrogram[from_freq:to_freq, at_time] += effect * intensity
             
-            for frequency in range(start_frequency, end_frequency):
-                target_index = np.argmin(np.abs(fft_freqs - frequency))#index of the frequency
-                
-                #multiplier = (len(band_range) - frequency)#change based on how far into the frequencies we are, the goal is a Guassian filter
-                change = effect * intensity#*multiplier#This change is effect * intensity, if effect is 1 and intensity is 10, then 8, then it will incrase 8
-                
-                normalized_magnitude_spectrum[target_index] += change#change the amplutides in the frequency domain
-                
-                phase_spectrum[target_index] *= 1#?????????#Change the phase at this point
-                                        #IDK WHAT THIS IS SUPPOSED TO BE BUT 2 SEEMS TO WORK ????? 
-       
+        #REMAKE THE SIGNAL FROM THE MODIFIED SPECTROGRAM
+        reconstructed_time, reconstructed_time_series = istft(modified_spectrogram, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
+        difference_in_signal_length = len(reconstructed_time_series) - num_samples#the reconstruced signal gets some extras because of float inaccuracy I think
+        reconstructed_time_series = reconstructed_time_series[:-difference_in_signal_length]#remove extras
+        reconstructed_time = reconstructed_time[:-difference_in_signal_length]#remove extras
         
-        # Modify the magnitude spectrum to reduce the contribution of the target frequency
-        unnormalized_magnitude_spectrum = normalized_magnitude_spectrum * num_samples
+        modified_fft_data = np.fft.rfft(reconstructed_time_series)#FFT on the reconstructed signal
+        modified_magnitude_spectrum = np.abs(modified_fft_data)#get the magnitudes
+        modified_normalized_magnitude_spectrum = modified_magnitude_spectrum / len(reconstructed_time_series)#normalize them to get correct amplitude
         
-        modified_fft_data = unnormalized_magnitude_spectrum * np.exp(1j * phase_spectrum)# Reconstruct the modified FFT coefficients
-                                                                         #the phase changes when altering the signal, so
-      
-        reconstructed_time_series = np.fft.irfft(modified_fft_data)# Inverse FFT to reconstrut the original signal
+        modified_fft_freqs = np.fft.rfftfreq(len(reconstructed_time_series), d=1/sample_rate)#should be the same, but just in case
+        #reconstructed the time series
+        modified_frequencies, modified_times, modified_spectrogram = stft(reconstructed_time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
+
         
+        # Plot the spectrogram
         if True:
             t = np.linspace(0, recording_time, num_samples)#time dimension
 
             #--- ORIGINAL TIME SERIES ------
-            plt.subplot(2, 2, 1)
+            plt.subplot(2, 3, 1)
             plt.plot(t, time_series)
             plt.xlabel('Time')
             plt.ylabel('Amplitude')
             plt.title('Original Signal')
             #-----  ORIGINAL FFT ------
-            plt.subplot(2, 2, 2)
-            plt.plot(fft_freqs, unmodified_mangitude_spectrum)
-            plt.xlabel('Amplitude')
-            plt.ylabel('Frequency')
+            plt.subplot(2, 3, 2)
+            plt.plot(unmodified_fft_freqs, unmodified_normalized_magnitude_spectrum)
+            plt.xlabel('Frequency')
+            plt.ylabel('Amplitude')
             plt.title('Unmodified FFT')
+            #------ ORIGINAL SPECTROGRAM
+            plt.subplot(2, 3, 3)
+            plt.pcolormesh(original_times, original_frequencies, np.abs(original_spectrogram), shading='auto')
+            plt.colorbar()
+            plt.xlabel('Time')
+            plt.ylabel('Frequency')
+            plt.title('Unmodified Spectrogram')
             #------ MODIFINED TIME SERIES -------
-            plt.subplot(2, 2, 3)
-            plt.plot(t, reconstructed_time_series)
+            plt.subplot(2, 3, 4)
+            plt.plot(reconstructed_time, reconstructed_time_series)
             plt.xlabel('Time')
             plt.ylabel('Amplitude')
             plt.title('Reconstructed Signal')
-            plt.subplot(2, 2, 4)
+            plt.subplot(2, 3, 5)
             #------ MODFIFED FFT -------
-            plt.plot(fft_freqs, normalized_magnitude_spectrum)
+            plt.plot(modified_fft_freqs, modified_normalized_magnitude_spectrum)
             plt.xlabel('Amplitude')
             plt.ylabel('Frequency')
             plt.title('Modified FFT')
-
+            #------- MODIFIED SPECTROGRAM -------
+            plt.subplot(2, 3, 6)
+            plt.pcolormesh(modified_times, modified_frequencies, np.abs(modified_spectrogram), shading='auto')
+            plt.colorbar()
+            plt.xlabel('Time')
+            plt.ylabel('Frequency')
+            plt.title('Modified Spectrogram')
             plt.tight_layout()
             plt.show()
             exit()
-        data[sample][channel] = modified#overwrite the previous data with the new data
+            
+        data[sample][channel] = reconstructed_time_series#overwrite the previous data with the new data
     #---- CREATE LABEL ------
     obj = {
         "pain" : pain,

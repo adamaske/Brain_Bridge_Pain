@@ -7,9 +7,6 @@ import matplotlib.pyplot as plt
 import json
 from scipy.signal import stft 
 
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
-
 
 #THIS SCRIPT LOADS EEG DATA THAT HAS BEEN IMPOSED WITH PAIN AND TRAINS A CNN WITH IT
 channels = 16
@@ -62,7 +59,7 @@ labels = np.array(new_labels)#usable labels
 print(f"Labels : {labels.shape}")
 
 #------- CREATE SPECTROGRAMS FROM EEG DATA ------------
-for sample in range(0):
+for sample in range(len(data)):
     for channel in range(len(data[sample])):
         signal = data[sample][channel]#the signal 
         num_points = len(data[sample][channel])#amount of points in this signal
@@ -115,7 +112,7 @@ for sample in range(0):
         exit()
         
         fig1, axis1 = plt.subplots(figsize=(8,6))
-        axis1.plot(fft_freqs, magnitude_spectrum)
+        axis1c
         axis1.set_xlabel('Frequency (Hz)')
         axis1.set_ylabel('Magnitude')
         axis1.set_title('Magnitude Spectrum')
@@ -135,7 +132,11 @@ for sample in range(0):
         plt.tight_layout()
         plt.show()
         exit()    
-    
+
+
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+
 # Preprocess the data
 expanded_data = np.expand_dims(data, axis=-1)
 #data = data / 255.0  # Normalizing between 0 and 1
