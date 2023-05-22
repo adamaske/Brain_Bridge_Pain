@@ -8,7 +8,6 @@ import json
 from scipy.signal import stft
 from scipy.signal import istft
 #import data set of normal EEG data
-
 channels = 16
 recording_time = 5
 sample_rate = 250
@@ -96,15 +95,15 @@ for sample in range(pain_impose_amount):#loop to create
         modified_fft_freqs = np.fft.rfftfreq(len(reconstructed_time_series), d=1/sample_rate)#should be the same, but just in case
         #reconstructed the time series
         modified_frequencies, modified_times, modified_spectrogram = stft(reconstructed_time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
-        data[sample][channel] = reconstructed_time_series
+       
         
         # Plot the spectrogram
-        if False:
+        if True:
             t = np.linspace(0, recording_time, num_samples)#time dimension
 
             #--- ORIGINAL TIME SERIES ------
             plt.subplot(2, 3, 1)
-            plt.plot(t, data[sample][channel])
+            plt.plot(t, time_series)
             plt.xlabel('Time')
             plt.ylabel('Amplitude')
             plt.title('Original Signal')

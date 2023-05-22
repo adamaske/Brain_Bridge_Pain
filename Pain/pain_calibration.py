@@ -58,28 +58,32 @@ for label in range(len(all_labels)): # CONVERT THE JSON OBJECTS INTO A USEABLE N
 labels = np.array(new_labels)#usable labels
 print(f"Labels : {labels.shape}")
 
-spectrograms = [[] for i in range(len(data))]
+frequencies_spec = 0
+times_spec = 0
+spectrograms = np.zeros((len(data), channels, 65, 21))
 #------- CREATE SPECTROGRAMS FROM EEG DATA ------------
 for sample in range(len(data)):
     print(f"Creating spectrogram for sample : {sample}")
     timing = labels[sample][0]
     intensity = labels[sample][1]
     for channel in range(len(data[sample])):
-        print(f"Channel : {channel}")
-        time_series = data[sample][channel]#the signal 
-        num_points = len(data[sample][channel])#amount of points in this signal
+        #print(f"Channel : {channel}")
+        
+        time_series = data[sample][channel].copy()#the signal 
+        num_points = len(time_series)#amount of points in this signal
         sample_rate = num_points / recording_time #sample rate of the signal
         
         #------ SPECTROGRAM --------
         window_size = 128
         hop_length = 64
         frequencies, times, spectrogram = stft(time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
-        spectrograms[sample].append((frequencies, times, spectrogram))
+        spectrograms[sample][channel] = spectrogram# set the spectrogram
+        
         t = np.linspace(0, recording_time, num_points)
          #--- ORIGINAL TIME SERIES ------
-        if sample != 0:
+        if sample != -1:
             continue
-        if channel != 0:
+        if channel != -1:
             continue
         plt.subplot(2, 1, 1)
         plt.plot(t, time_series)
@@ -94,25 +98,24 @@ for sample in range(len(data)):
         plt.title(f'Spectrogram - Timing : {timing} - Intensity : {intensity}')
         plt.show()
 
-spectrograms_array = np.array(spectrograms)
+spectrograms_array = spectrograms
 print(f"Spectrograms : {spectrograms_array.shape}")
 for spectrogram in range(len(spectrograms_array)):
     for channel in range(len(spectrograms_array[spectrogram])):
-        if spectrogram != 0:
+        if spectrogram != -1:
             continue
-        if channel != 0:
+        if channel != -1:
             continue
         spec = spectrograms_array[spectrogram][channel]
         #print(f"{spec.shape}")
         plt.pcolormesh(spec[1], spec[0], np.abs(spec[2]) , shading='auto')
         plt.show()
-exit()
 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 # Preprocess the data
-expanded_data = np.expand_dims(data, axis=-1)
+expanded_data = data#np.expand_dims(data, axis=-1)
 #data = data / 255.0  # Normalizing between 0 and 1
 print(f"Expanded data : {expanded_data.shape}")
 
@@ -126,7 +129,7 @@ val_labels = labels[-num_validation_samples:]
 
 # Create the TensorFlow model
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(16, 1250, 1)),
+    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(16, 1250)),
     tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Flatten(),
     tf.keras.layers.Dense(64, activation='relu'),
