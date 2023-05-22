@@ -43,6 +43,7 @@ modified_signals = []
 labels = []#Created labels
 for sample in range(pain_impose_amount):#loop to create
     sample %= len(data)
+    print(f"Sample : {sample}")
     pain = 1#random.randint(1,100)#pain or not
     timing = random.randint(1, recording_time-1)
     intensity = random.randint(1, 10)
@@ -95,7 +96,7 @@ for sample in range(pain_impose_amount):#loop to create
         modified_fft_freqs = np.fft.rfftfreq(len(reconstructed_time_series), d=1/sample_rate)#should be the same, but just in case
         #reconstructed the time series
         modified_frequencies, modified_times, modified_spectrogram = stft(reconstructed_time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
-
+        data[sample][channel] = reconstructed_time_series
         
         # Plot the spectrogram
         if False:
@@ -103,7 +104,7 @@ for sample in range(pain_impose_amount):#loop to create
 
             #--- ORIGINAL TIME SERIES ------
             plt.subplot(2, 3, 1)
-            plt.plot(t, time_series)
+            plt.plot(t, data[sample][channel])
             plt.xlabel('Time')
             plt.ylabel('Amplitude')
             plt.title('Original Signal')
@@ -141,7 +142,8 @@ for sample in range(pain_impose_amount):#loop to create
             plt.title('Modified Spectrogram')
             plt.tight_layout()
             plt.show()
-            exit()
+            
+            
         
         #------ OVERWRITE OLD TIME SERIES WITH NEW -------
         data[sample][channel] = reconstructed_time_series#overwrite the previous data with the new data
@@ -154,11 +156,11 @@ for sample in range(pain_impose_amount):#loop to create
     }
     labels.append(obj)#add label to labels
 
-if False:
+if True:
     modified_signals = np.array(modified_signals)
-    for signal in range(len(modified_signals)):
-        t = np.linspace(0, recording_time, len(modified_signals[signal]))
-        plt.plot(t, modified_signals[signal])
+    for sig in range(0,2):
+        t = np.linspace(0, recording_time, len(modified_signals[sig]))
+        plt.plot(t, modified_signals[sig])
         plt.show()
     
 #------- SAVE THE IMPOSED DATA -----------------
@@ -181,12 +183,13 @@ if os.path.isfile(file_path):#Does this file already exist ?
     new_data = np.vstack((old_data, data))#STACK THE EXISTING DATA 
     np.save(file_path, new_data) #SAVE THE DATA TO FILE
     print(f"Saved new data : {new_data.shape} at {file_name}")
+    
 else:
     print(f"{file_name} does not exists!")
     saved_data = np.save(file_path, data)
     print(f"Saved data : {data.shape} at {file_name}")
-    
-#---------- SAVE JSON LABELS ---------------
+        
+#------- SAVE JSON LABELS ---------------
 print(f"---STARTING JSON SAVING---")
 json_file_name = "imposed_eeg_data_labels.json"
 json_file_path = os.path.join(path, json_file_name)

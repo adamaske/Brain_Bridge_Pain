@@ -58,81 +58,55 @@ for label in range(len(all_labels)): # CONVERT THE JSON OBJECTS INTO A USEABLE N
 labels = np.array(new_labels)#usable labels
 print(f"Labels : {labels.shape}")
 
+spectrograms = [[] for i in range(len(data))]
 #------- CREATE SPECTROGRAMS FROM EEG DATA ------------
 for sample in range(len(data)):
+    print(f"Creating spectrogram for sample : {sample}")
+    timing = labels[sample][0]
+    intensity = labels[sample][1]
     for channel in range(len(data[sample])):
-        signal = data[sample][channel]#the signal 
+        print(f"Channel : {channel}")
+        time_series = data[sample][channel]#the signal 
         num_points = len(data[sample][channel])#amount of points in this signal
         sample_rate = num_points / recording_time #sample rate of the signal
         
-        #------ FOURIER TRANSFROM ------- #
-        fft_data = np.fft.rfft(data[sample][channel])#FFT on the signal
-        
-        magnitude_spectrum = np.abs(fft_data)#the mangitudes of amplitudes for component frequencies
-        magnitude_spectrum = magnitude_spectrum / num_points#normalize the amplutides
-        
-        phase_spectrum = np.angle(fft_data)#phases
-        
-        fft_freqs = np.fft.rfftfreq(num_points, d=1/sample_rate)#get the frequencies
-
-        target_freq = 5  # Frequency to reduce, 5hz
-        target_index = np.argmin(np.abs(fft_freqs - target_freq))#find the index of this frequuecny
-        
-        
-        # Modify the magnitude spectrum to reduce the contribution of the target frequency
-        reduced_spectrum = magnitude_spectrum.copy()
-        reduced_spectrum = reduced_spectrum * num_points#denormalize the signal
-        reduced_spectrum[target_index] /= 5  #Change the target frequencies
-        phase_spectrum[target_index] = 2#Change the phase at this point
-                                        #IDK WHAT THIS IS SUPPOSED TO BE BUT 2 SEEMS TO WORK ????? 
-       
-        reduced_fft_data = reduced_spectrum * np.exp(1j * phase_spectrum)# Reconstruct the modified FFT coefficients
-                                                                         #the phase changes when altering the signal, so
-      
-        reconstructed_signal = np.fft.irfft(reduced_fft_data)# Inverse FFT to reconstrut the original signal
-        
-
-        t = np.linspace(0, recording_time, num_points)#time dimension
-        plt.plot(t, reconstructed_signal)
-        
+        #------ SPECTROGRAM --------
+        window_size = 128
+        hop_length = 64
+        frequencies, times, spectrogram = stft(time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
+        spectrograms[sample].append((frequencies, times, spectrogram))
+        t = np.linspace(0, recording_time, num_points)
+         #--- ORIGINAL TIME SERIES ------
+        if sample != 0:
+            continue
+        if channel != 0:
+            continue
         plt.subplot(2, 1, 1)
-        plt.plot(t, data[sample][channel])
+        plt.plot(t, time_series)
         plt.xlabel('Time')
         plt.ylabel('Amplitude')
         plt.title('Original Signal')
-
-        plt.subplot(2, 1, 2)
-        plt.plot(t, reconstructed_signal)
+        plt.subplot(2,1,2)
+        plt.pcolormesh(times, frequencies, np.abs(spectrogram), shading='auto')
+        plt.colorbar()
         plt.xlabel('Time')
-        plt.ylabel('Amplitude')
-        plt.title('Reduced 5 Hz Contribution')
-
-        plt.tight_layout()
+        plt.ylabel('Frequency')
+        plt.title(f'Spectrogram - Timing : {timing} - Intensity : {intensity}')
         plt.show()
-        exit()
-        
-        fig1, axis1 = plt.subplots(figsize=(8,6))
-        axis1c
-        axis1.set_xlabel('Frequency (Hz)')
-        axis1.set_ylabel('Magnitude')
-        axis1.set_title('Magnitude Spectrum')
-        
-        #----- SHORT TIME FOURIER TRANSFORM ----- #
-        window_size = 512
-        hop_length = 64
-        frequencies, times, spectrogram = stft(data[sample][channel], window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
-        
-        fig2, axis2 = plt.subplots(figsize=(8,6))
-        # Plot the spectrogram
-        axis2.pcolormesh(times, frequencies, np.abs(spectrogram), shading='auto')
-        #plt.colorbar(label='Magnitude')
-        axis2.set_xlabel('Time')
-        axis2.set_ylabel('Frequency')
-        axis2.set_title('Spectrogram')
-        plt.tight_layout()
-        plt.show()
-        exit()    
 
+spectrograms_array = np.array(spectrograms)
+print(f"Spectrograms : {spectrograms_array.shape}")
+for spectrogram in range(len(spectrograms_array)):
+    for channel in range(len(spectrograms_array[spectrogram])):
+        if spectrogram != 0:
+            continue
+        if channel != 0:
+            continue
+        spec = spectrograms_array[spectrogram][channel]
+        #print(f"{spec.shape}")
+        plt.pcolormesh(spec[1], spec[0], np.abs(spec[2]) , shading='auto')
+        plt.show()
+exit()
 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
