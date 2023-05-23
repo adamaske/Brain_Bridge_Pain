@@ -5,7 +5,7 @@ import pathlib#paths and files
 import matplotlib.pyplot as plt
 from pylsl import resolve_stream#networking
 from pylsl import StreamInlet
-
+from scipy.signal import stft
 from threading import Thread#custom thread class
 
 
@@ -40,7 +40,13 @@ for channel in range(channels):
     
     fft_data = np.fft.rfft(time_series)
     fft_freqs = np.fft.rfftfreq(len(time_series), d=1/sample_rate)
-    
+    unmodified_magnitude_spectrum = np.abs(fft_data)#get the magnitudes
+    unmodified_normalized_magnitude_spectrum = unmodified_magnitude_spectrum / len(time_series)#normalize them to get correct amplitude
+
+    window_size = 64   
+    hop_length = 32
+    original_frequencies, original_times, original_spectrogram = stft(time_series, window='hamming', nperseg=window_size, noverlap=window_size-hop_length, fs=sample_rate)
+        
     plt.plot(fft_freqs, np.abs(fft_data))
     plt.show()
 # run trough model
