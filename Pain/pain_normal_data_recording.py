@@ -5,10 +5,12 @@ import numpy as np
 import time
 import os
 import pathlib#paths and files
-#THIS MUST CORRESEPOND WITH OPENBCIGUI NETOWRKING
-inlet = StreamInlet(resolve_stream('type', 'RAW')[0])#RAW = time series, FFT = ffts
 
-num_samples = 3#How many samples to record this session ?
+#---- FILTERS MUST BE ON IN THE OPENBCI GUI -------
+inlet = StreamInlet(resolve_stream('type', 'RAW')[0])#RAW = time series, FFT = ffts
+                                                    #THIS MUST CORRESEPOND WITH OPENBCIGUI NETOWRKING
+
+num_samples = 10#How many samples to record this session ?
 
 channels = 16 #how many channels are there 
 recording_time = 5#How long does one sample last ? 

@@ -6,12 +6,15 @@ import pathlib#paths and files
 import matplotlib.pyplot as plt
 import json
 from scipy.signal import stft 
-
-
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, BatchNormalization
 #THIS SCRIPT LOADS EEG DATA THAT HAS BEEN IMPOSED WITH PAIN AND TRAINS A CNN WITH IT
 channels = 16
 recording_time = 5
-sample_rate = 250
+sample_rate = 125# 125 FOR REAL, 250 FOR SYNTHETIC
 
 data = np.zeros((0, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
 
@@ -47,22 +50,24 @@ else:
     print(f"{json_file_path} does not exist, exiting!")
     exit()
     
-#------ CREATE NUMPY ARRAY FROM LABELS -------------
-new_labels = []
+#------ LABELS -------------
+labels = np.zeros((len(all_labels)))
 for label in range(len(all_labels)): # CONVERT THE JSON OBJECTS INTO A USEABLE NUMPY ARRAY
+    pain = all_labels[label]["pain"]
     timing = all_labels[label]["timing"]
     intensity = all_labels[label]["intensity"]
     #print(timing, intensity)
-    new_labels.append([timing, intensity])
+    #new_labels.append([timing / recording_time , intensity / 10])
+    labels[label] = pain
     
-labels = np.array(new_labels)#usable labels
 print(f"Labels : {labels.shape}")
 
+
+#------- CREATE SPECTROGRAMS FROM EEG DATA ------------
 frequencies_spec = 0
 times_spec = 0
-spectrograms = np.zeros((len(data), channels, 65, 21))
-#------- CREATE SPECTROGRAMS FROM EEG DATA ------------
-for sample in range(len(data)):
+spectrograms = np.zeros((len(data), channels, 65, 11))
+for sample in range(0):#len(data)):
     print(f"Creating spectrogram for sample : {sample}")
     timing = labels[sample][0]
     intensity = labels[sample][1]
@@ -100,7 +105,7 @@ for sample in range(len(data)):
 
 spectrograms_array = spectrograms
 print(f"Spectrograms : {spectrograms_array.shape}")
-for spectrogram in range(len(spectrograms_array)):
+for spectrogram in range(0):#len(spectrograms_array)):
     for channel in range(len(spectrograms_array[spectrogram])):
         if spectrogram != -1:
             continue
@@ -111,60 +116,54 @@ for spectrogram in range(len(spectrograms_array)):
         plt.pcolormesh(spec[1], spec[0], np.abs(spec[2]) , shading='auto')
         plt.show()
 
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
+#----- MACHINE LEARNING ------
 
 # Preprocess the data
-expanded_data = data#np.expand_dims(data, axis=-1)
+expanded_data = np.expand_dims(data, axis=-1)
 #data = data / 255.0  # Normalizing between 0 and 1
 print(f"Expanded data : {expanded_data.shape}")
 
-# Split the data into training and validation sets
-validation_split = 0.2  # 20% for validation
-num_validation_samples = int(validation_split * expanded_data.shape[0])
-train_data = expanded_data[:-num_validation_samples]
-train_labels = labels[:-num_validation_samples]
-val_data = expanded_data[-num_validation_samples:]
-val_labels = labels[-num_validation_samples:]
+#slice up data into training and validation
+x_train, x_val, y_train, y_val = train_test_split(data, labels, test_size=0.2, random_state=42)
 
-# Create the TensorFlow model
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(16, 1250)),
-    tf.keras.layers.MaxPooling2D((2, 2)),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(64, activation='relu'),
-    tf.keras.layers.Dense(2, activation='linear')
-])
+x_train = x_train.reshape(-1, 16, 625)
+x_val = x_val.reshape(-1, 16, 625)
+x_train /= np.max(x_train)
 
-# Compile the model
-model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
+
+model = Sequential()
+
+model.add(Conv1D(64, (3), input_shape=x_train.shape[1:]))
+model.add(Activation('relu'))
+
+model.add(Conv1D(64, (2)))
+model.add(Activation('relu'))
+model.add(MaxPooling1D(pool_size=(2)))
+
+model.add(Conv1D(64, (2)))
+model.add(Activation('relu'))
+model.add(MaxPooling1D(pool_size=(2)))
+
+model.add(Flatten())
+
+model.add(Dense(512))
+
+model.add(Dense(1))
+model.add(Activation('sigmoid'))
+
+model.compile(loss='binary_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
 
 # Train the model
-batch_size = 16
-epochs = 10
-model.fit(train_data, train_labels, batch_size=batch_size, epochs=epochs, validation_data=(val_data, val_labels))
-
-# Evaluate the model on the validation set
-val_loss, val_mae = model.evaluate(val_data, val_labels)
-
-# Print the evaluation results
-print("Validation Loss:", val_loss)
-print("Validation Mean Absolute Error:", val_mae)
-# Assuming you have the trained model and new data ready for prediction
-new_data = data[:2]  # Shape: (samples, channels, time_steps)
-
-# Preprocess the new data (similar to the preprocessing for training)
-new_data = np.expand_dims(new_data, axis=-1)
+batch_size = 64
+epochs = 20
+model.fit(x_train, y_train, validation_data=(x_val, y_val), batch_size=batch_size, epochs=epochs)
 
 
-# Make predictions using the trained model
-predictions = model.predict(new_data)
-
-# Print the predictions
-print(predictions)
 
 #----- SAVE TF MODEL -----------
-save_model = False
+save_model = True
 overwrite_model = True
 if save_model:
     model_file_name = "pain_calibrated_model.tf"
