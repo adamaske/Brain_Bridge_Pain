@@ -13,8 +13,8 @@ from scipy import signal
 channels = 16
 recording_time = 5
 sample_rate = 125
-intensity_multiplier = 1.75
-pain_impose_amount = 1000 #how many pain imposed signals to create
+intensity_multiplier = 0.5
+pain_impose_amount = 5000 #how many pain imposed signals to create
 data = np.zeros((pain_impose_amount, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
 
 
@@ -61,13 +61,14 @@ for data_sample in range(pain_impose_amount):#loop to create
         "timing" : timing,
         "intensity" : intensity
     }
-    labels.append(obj)#add label to labels
     
     #---- SET THE IMPOSED EQUAL TO DATA ----
     imposed_data[data_sample] = data[sample]#set the imposed data
     #----- CHECK IF ITS PAIN OR NOT --------
     if pain == 0:#If no pain was selected, continue
         non_imposed += 1
+        labels.append(obj)#add label to labels
+    
         continue
     pain_imposed +=1
     
@@ -76,6 +77,14 @@ for data_sample in range(pain_impose_amount):#loop to create
     artifact = all_artifacts[artifact_index]#gets the artifact
     name, band_ranges, affected_channels, effect, delay, duration = pain_artifacts.ParseArtifact(artifact_index)#parse the artifact
     print(f"Choosen artifact : {name}")
+    obj = {
+        "pain" : pain,
+        "timing" : timing,
+        "intensity" : intensity,
+        "artifact"  : artifact
+    }
+   
+    labels.append(obj)#add label to labels
     
     #----- APPLY ------
     for pa_channel in affected_channels:
@@ -170,7 +179,8 @@ for data_sample in range(pain_impose_amount):#loop to create
         # Plot the spectrogram
         if False:
             t = np.linspace(0, recording_time, num_samples)#time dimension
-
+            print(f"Timing : {timing}")
+            print(f"Intensity : {intensity}")
             #--- ORIGINAL TIME SERIES ------
             plt.subplot(2, 3, 1)
             plt.plot(t, time_series)
@@ -211,7 +221,7 @@ for data_sample in range(pain_impose_amount):#loop to create
             plt.title('Modified Spectrogram')
             plt.tight_layout()
             plt.show()
-            
+            exit()
             
         
         #------ OVERWRITE OLD TIME SERIES WITH NEW -------

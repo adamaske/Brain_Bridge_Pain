@@ -92,7 +92,7 @@ for sample in range(len(data)):#loop to create
       
         reconstructed_time_series = np.fft.irfft(modified_fft_data)# Inverse FFT to reconstrut the original signal
         
-        if True:
+        if False:
             t = np.linspace(0, recording_time, num_samples)#time dimension
 
             #--- ORIGINAL TIME SERIES ------
@@ -123,7 +123,7 @@ for sample in range(len(data)):#loop to create
             plt.tight_layout()
             plt.show()
             exit()
-        data[sample][channel] = modified#overwrite the previous data with the new data
+        data[sample][channel] = reconstructed_time_series#overwrite the previous data with the new data
     #---- CREATE LABEL ------
     obj = {
         "pain" : pain,

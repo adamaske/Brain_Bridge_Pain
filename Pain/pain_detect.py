@@ -7,6 +7,7 @@ import pathlib#paths and files
 import matplotlib.pyplot as plt
 import json
 from scipy.signal import stft 
+from pain_artifacts import ParseArtifact
 
 current_dir = pathlib.Path(__file__).parent#get current folder
 path = os.path.join(current_dir, "Datasets", "PainData")#get directory to save recording
@@ -57,6 +58,40 @@ for label in range(len(labels)):
     y_test[label] = labels[label]["pain"]
 
 for test in range(amount):
+    real_data = test_data[test]
+    
+    obj                 = labels[test]
+    pain                = obj["pain"]
+    timing              = obj["timing"]
+    intensity           = obj["intensity"]
+    print(f"Pain : {pain}, Timing : {timing}, Intensity : {intensity}")
+    if pain == 1:
+        artifact = obj["artifact"] 
+        print(f"Artifact : {artifact}")
+        
+    if False:
+        for channel in real_data:
+            time_series = channel
+            t = np.linspace(0, 5, len(time_series))
+            plt.plot(t, time_series)
+            plt.xlabel('Time')
+            plt.ylabel('Amplitude')
+            plt.title('Time Series')
+
+            #plt.subplot(1,3, 2)
+            #plt.plot(fft_freqs, unmodified_normalized_magnitude_spectrum)
+            #plt.xlabel('Frequency')
+            #plt.ylabel('Amplitude')
+            #plt.title('Fourier Transform')
+    #
+            #plt.subplot(1,3,3)
+            #plt.pcolormesh(original_times, original_frequencies, np.abs(original_spectrogram), shading='auto')
+            #plt.xlabel('Time')
+            #plt.ylabel('Frequency')
+            #plt.title('Spectrogram')
+
+            plt.show()
+    
     sample = np.expand_dims(x_test[test], axis=0)
     sample /= np.max(sample)
     id = y_test[test]
