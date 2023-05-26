@@ -134,15 +134,7 @@ for data_sample in range(pain_impose_amount):#loop to create
             
         fft_data = np.fft.rfft(time_series)#get freqeuency spectrum from time series
         unmodified_fft_freqs = np.fft.rfftfreq(num_samples, d=1/sample_rate)#get the frequencies
-        
-        if False:
-           # t = np.linspace(0, recording_time, len(notch_filtered_time_series))
 
-            plt.plot(unmodified_fft_freqs, np.abs(fft_data) / num_samples)
-            plt.yscale('log')
-            plt.show()
-            exit()
-            
         unmodified_magnitude_spectrum = np.abs(fft_data)#get the magnitudes
         unmodified_normalized_magnitude_spectrum = unmodified_magnitude_spectrum / len(time_series)#normalize them to get correct amplitude
 
@@ -177,7 +169,7 @@ for data_sample in range(pain_impose_amount):#loop to create
        
         
         # Plot the spectrogram
-        if False:
+        if True:
             t = np.linspace(0, recording_time, num_samples)#time dimension
             print(f"Timing : {timing}")
             print(f"Intensity : {intensity}")

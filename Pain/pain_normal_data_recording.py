@@ -8,7 +8,7 @@ import pathlib#paths and files
 
 #---- FILTERS MUST BE ON IN THE OPENBCI GUI -------
 inlet = StreamInlet(resolve_stream('type', 'RAW')[0])#RAW = time series, FFT = ffts
-                                                    #THIS MUST CORRESEPOND WITH OPENBCIGUI NETOWRKING
+                                                     #THIS MUST CORRESEPOND WITH OPENBCIGUI NETOWRKING
 
 num_samples = 10#How many samples to record this session ?
 
@@ -23,7 +23,6 @@ print(f"Sample Rate : {sample_rate:.1f}")
 print(f"Sample Amount : {num_samples:.1f}")
  
 samples = np.zeros((0, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
-
 
 for sample in range(1, num_samples+1):
     print(f"Starting recording {sample:.0f}!")
@@ -44,8 +43,8 @@ for sample in range(1, num_samples+1):
     
     recorded_data = np.array(recording)#make to numpy array
     print(f"Recorded data : {recorded_data.shape}")
-    
-    samples = np.concatenate((samples, np.expand_dims(recorded_data, axis=0)), axis=0)#Add recording to the samples
+    print(f"Data : {samples.shape}")
+    samples = np.vstack((samples, recorded_data))#Add recording to the samples
     print(f"Samples : {samples.shape}")
 
 print(f"Recording is finished!")
