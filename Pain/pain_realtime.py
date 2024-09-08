@@ -32,9 +32,10 @@ for sample in range(int(recording_time * sample_rate)):#for every data point we 
     
 print(f"Data : {data.shape}")
 specs = []#store spectrograms here
+time_data = []
 for channel in range(channels):#go over every channel and create spectrograms
     time_series = data[channel]
-    
+    time_data.append(time_series)
     fft_data = np.fft.rfft(time_series)
     fft_freqs = np.fft.rfftfreq(len(time_series), d=1/sample_rate)
     unmodified_magnitude_spectrum = np.abs(fft_data)#get the magnitudes
@@ -71,7 +72,15 @@ for channel in range(channels):#go over every channel and create spectrograms
     
     #plt.show()
 # run trough model
+times = np.array(time_data)
 
+t = np.linspace(0, recording_time, int(recording_time * sample_rate))
+for channel in range(channels):
+    plt.subplot(16, 1, channel+1)
+    plt.plot(t, times[channel])
+
+plt.show()
+exit()
 specs = np.array(specs)#turn into numpy array
 
 print(f"Spectrograms : {specs.shape}")

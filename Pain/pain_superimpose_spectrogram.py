@@ -13,7 +13,7 @@ from scipy import signal
 channels = 16
 recording_time = 5
 sample_rate = 125
-intensity_multiplier = 0.5
+intensity_multiplier = 5
 pain_impose_amount = 5000 #how many pain imposed signals to create
 data = np.zeros((pain_impose_amount, int(channels), int(recording_time * sample_rate)))#array to hold all recordings
 
@@ -170,6 +170,24 @@ for data_sample in range(pain_impose_amount):#loop to create
         
         # Plot the spectrogram
         if True:
+             #------ ORIGINAL SPECTROGRAM
+            plt.subplot(1, 2, 1)
+            plt.pcolormesh(original_times, original_frequencies, np.abs(original_spectrogram), shading='gouraud', cmap='hot')
+            #plt.colorbar()
+            plt.xlabel('Time')
+            plt.ylabel('Frequency')
+            plt.title('Unmodified Spectrogram')
+            #------- MODIFIED SPECTROGRAM -------
+            plt.subplot(1, 2, 2)
+            plt.pcolormesh(modified_times, modified_frequencies, np.abs(modified_spectrogram), shading='gouraud',cmap='hot')
+            #plt.colorbar()
+            plt.xlabel('Time')
+            plt.ylabel('Frequency')
+            plt.title('Modified Spectrogram')
+            plt.tight_layout()
+            plt.show()
+            exit()
+            
             t = np.linspace(0, recording_time, num_samples)#time dimension
             print(f"Timing : {timing}")
             print(f"Intensity : {intensity}")
@@ -185,13 +203,7 @@ for data_sample in range(pain_impose_amount):#loop to create
             plt.xlabel('Frequency')
             plt.ylabel('Amplitude')
             plt.title('Unmodified FFT')
-            #------ ORIGINAL SPECTROGRAM
-            plt.subplot(2, 3, 3)
-            plt.pcolormesh(original_times, original_frequencies, np.abs(original_spectrogram), shading='auto')
-            plt.colorbar()
-            plt.xlabel('Time')
-            plt.ylabel('Frequency')
-            plt.title('Unmodified Spectrogram')
+           
             #------ MODIFINED TIME SERIES -------
             plt.subplot(2, 3, 4)
             plt.plot(reconstructed_time, reconstructed_time_series)

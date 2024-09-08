@@ -31,7 +31,7 @@ for sample in range(1, num_samples+1):
     
     recording = [[] for i in range(channels)]#Cache the incoming data
     
-    for data_point in range(int(recording_time * sample_rate)):#
+    for data_point in range(duration):#
         raw_data, timestamp = inlet.pull_sample()#for raw data, this should fire 16 data points 250 times per second
         
         for channel in range(len(raw_data)):#for each channel

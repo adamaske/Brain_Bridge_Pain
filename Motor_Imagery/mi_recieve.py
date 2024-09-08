@@ -12,7 +12,7 @@ if __name__ == "__main__":
   print(f"OSC Client {ip} : {port}")
   sendOSC = True#should we send over OSC
   
-  fakeMessages = True#do fake messages 
+  fakeMessages = False#do fake messages 
   fake_msg_time = 3#how long
   fake_msg_firerate = 100
   if fakeMessages:

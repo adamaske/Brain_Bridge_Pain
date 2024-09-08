@@ -40,8 +40,8 @@ info = StreamInfo(name='MotorImagery-Markers', #Stream name
 
 outlet = StreamOutlet(info) #LSL outlet stream, with info as its settings
 
-warmup_trials = 5 #Amount of warmup trails. A warmup trial does not count in calibartion
-trails_per_class = 20 #Amount of trials per class (left / right) 
+warmup_trials = 2 #Amount of warmup trails. A warmup trial does not count in calibartion
+trails_per_class = 50 #Amount of trials per class (left / right) 
 perform_time = 3.5 #How long does one trial last, in seconds
 wait_time = 0.5 #How long to wait between each trial
 pause_every =100 #After x trails, give the user a break
@@ -56,7 +56,7 @@ choice = random.choice(range(len(markers) * 10)) % len(markers) #Is this a left 
                                                                 
 trial_amount = warmup_trials + (trails_per_class * len(markers)) #total amount of trails to run. Warmups + 60 left + 60 right,etc
 
-start = input("Anykey to start")
+start = input("START RECORDING IN LABRECORDER")
 for trial in range(1, trial_amount + 1): #Trial loop. Starts at 1
     trial_text.set_text(f"Trail : {trial}")#update trial text to correct trial
 

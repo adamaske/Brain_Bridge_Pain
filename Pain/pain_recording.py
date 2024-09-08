@@ -12,7 +12,8 @@ import json#files
 import pathlib#paths and files
 from threading import Thread#custom thread class
 
-
+#--
+recording_time = 5
 class CustomRecordingThread(Thread):
     def __init__(self, *args): #args for what inlet to use
         Thread.__init__(self)
@@ -26,57 +27,62 @@ class CustomRecordingThread(Thread):
 def Record_FFT(inlet):
     print('FFT Recording Running')
     channels = 16
-    recording_time = 5
-    sample_rate = inlet.info().nominal_srate()
-    num_samples = int(recording_time * sample_rate)  
+    local_sample_rate = inlet.info().nominal_srate()
+    num_samples = int(recording_time * local_sample_rate)  
     
     print(f"FFT Channels : {channels:.1f}")
     print(f"FFT Recording Time : {recording_time:.1f}")
-    print(f"FFT Sample Rate : {sample_rate:.1f}")
+    print(f"FFT Sample Rate : {local_sample_rate:.1f}")
     print(f"FFT Sample Amount : {num_samples:.1f}") 
     
-    channel_data = [[] for i in range(channels)]
+    start_time = time.time()#cache the time
     
-    start_time = time.time()
-    while time.time() - start_time < recording_time: #recording for recording_time
-        for channel in range(channels):
-            sample, timestamp = inlet.pull_sample()
-            channel_data[channel].append(sample)
-                
-        current_time = time.time() - start_time
-        print(f"FFT Elapsed : {current_time:.1f}", end='\r')
+    recorded_data = [[] for i in range(channels)]#Cache the incoming data
+    
+    for data_point in range(int(recording_time * local_sample_rate)):#
+        raw_data, timestamp = inlet.pull_sample()#for raw data, this should fire 16 data points 250 times per second
         
-    print(f"FFT Length of data : {len(channel_data):.1f}")
-    print(f"FFT Length of 0 data : {len(channel_data[0]):.1f}")
-   
-    print(f"FFT Length of 0,0 data : {len(channel_data[0][0]):.1f}")
-    fft_data = np.array(channel_data)#make numpy array
+        for channel in range(len(raw_data)):#for each channel
+            recorded_data[channel].append(raw_data[channel])#add each channel to the recording
+    
+    recording_duration = time.time() - start_time#How long did the recording last ? 
+    print(f"Recorded for {recording_duration:.1f} seconds!")
+    
+    recorded_data = np.array(recorded_data)#make to numpy array
+    print(f"FFT data : {recorded_data.shape}")
+    
+    fft_data = np.array(recorded_data)
     return fft_data
 
 def Record_Raw(inlet):
     print('RAW Recording Running')
     channels = 16
-    recording_time = 5
-    sample_rate = inlet.info().nominal_srate()
-    num_samples = int(recording_time * sample_rate)  
+    
+    local_sample_rate = inlet.info().nominal_srate()
+    num_samples = int(recording_time * local_sample_rate)  
     
     print(f"RAW Channels : {channels:.1f}")
     print(f"RAW Recording Time : {recording_time:.1f}")
-    print(f"RAW Sample Rate : {sample_rate:.1f}")
+    print(f"RAW Sample Rate : {local_sample_rate:.1f}")
     print(f"RAW Sample Amount : {num_samples:.1f}") 
     
-    channel_data = [[] for i in range(channels)]
-    start_time = time.time()
-
-    while time.time() - start_time < recording_time: #recording for recording_time
-        sample, timestamp = inlet.pull_sample() #each sample should contain 16 floats, 0th - 15th channel, microvoltage 
-        for channel in range(len(sample)):
-            channel_data[channel].append(sample[channel])
-        current_time = time.time() - start_time
-        print(f"RAW Elapsed : {current_time}", end='\r')
-    print(f"RAW Length of data : {len(channel_data):.1f}")
+    start_time = time.time()#cache the time
     
-    raw_data = np.array(channel_data)
+    recorded_data = [[] for i in range(channels)]#Cache the incoming data
+    
+    for data_point in range(int(recording_time * local_sample_rate)):#
+        raw_data, timestamp = inlet.pull_sample()#for raw data, this should fire 16 data points 250 times per second
+        
+        for channel in range(len(raw_data)):#for each channel
+            recorded_data[channel].append(raw_data[channel])#add each channel to the recording
+    
+    recording_duration = time.time() - start_time#How long did the recording last ? 
+    print(f"Recorded for {recording_duration:.1f} seconds!")
+    
+    recorded_data = np.array(recorded_data)#make to numpy array
+    print(f"RAW data : {recorded_data.shape}")
+    
+    raw_data = np.array(recorded_data)
     return raw_data
    
 def Keep_Or_Discard_Recording():
